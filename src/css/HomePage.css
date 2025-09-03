@@ -1,0 +1,117 @@
+/* --- 애니메이션 정의 --- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px); /* 위로 살짝 튀어오르는 효과 */
+  }
+}
+
+/* --- 애니메이션 적용 클래스 --- */
+.fade-in-up-text { 
+  animation: fadeInUp 1s ease-out 0.5s forwards; 
+  opacity: 0; 
+}
+.fade-in-up-buttons { 
+  animation: fadeInUp 1s ease-out 1s forwards; 
+  opacity: 0; 
+}
+
+/* --- 버튼 공통 스타일 --- */
+.btn-custom {
+  transition: all 0.2s ease-in-out;
+  font-weight: bold;
+}
+
+/* --- 개별 버튼 스타일 및 호버 효과 --- */
+.btn-login {
+  background-color: transparent;
+  border-color: rgb(78, 115, 223);
+  color: rgb(78, 115, 223);
+}
+.btn-login:hover {
+  background-color: rgb(78, 115, 223);
+  color: #fff;
+}
+
+.btn-register {
+  background-color: transparent;
+  border-color: rgb(28, 200, 138);
+  color: rgb(28, 200, 138);
+}
+.btn-register:hover {
+  background-color: rgb(28, 200, 138);
+  color: #fff;
+}
+
+.btn-matching {
+  background-color: rgba(240, 248, 12, 1);
+  border-color: rgba(240, 248, 12, 1);
+  color: #333;
+}
+
+.btn-schedule {
+  background-color: rgba(220, 78, 201, 1);
+  border-color: rgba(220, 78, 201, 1);
+  color: #333;
+}
+
+.btn-matching:hover, .btn-schedule:hover {
+  animation: bounce 0.6s ease;
+}
+
+/* --- 후기 캐러셀 레이아웃 --- */
+.review-carousel-container {
+  overflow: hidden;
+}
+.review-carousel-track {
+  display: flex;
+}
+.review-card-wrapper {
+  flex-shrink: 0;
+  width: 300px;
+  margin-right: 20px;
+}
+
+/* --- 모바일 메뉴 스타일 --- */
+.offcanvas-nav-link {
+  font-weight: bold;
+  background-color: rgb(250, 250, 248);
+  color: rgb(73, 80, 87);
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s ease;
+  display: block;
+}
+.offcanvas-nav-link:hover {
+  background-color: rgb(233, 236, 239);
+  color: rgb(0, 0, 0);
+}
+
+.offcanvas-nav-link-login {
+  font-weight: bold;
+  background-color: rgb(227, 242, 253);
+  color: rgb(33, 150, 243);
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.25rem;
+  display: block;
+}
+.offcanvas-nav-link-login:hover {
+  filter: brightness(95%);
+}
+
+/* --- 기능 소개 박스 애니메이션 --- */
+.feature-card {
+  opacity: 0; /* 기본적으로 숨김 */
+}
+.feature-card.is-visible {
+  animation: fadeInUp 1s ease-out forwards; /* is-visible 클래스가 추가되면 애니메이션 실행 */
+}
