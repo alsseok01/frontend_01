@@ -156,7 +156,7 @@ const HomePage = ({  }) => {
         ) : (
           // 모바일 레이아웃: 텍스트와 버튼을 그룹화하여 중앙 정렬
           <div className="flex-grow-1 d-flex flex-column justify-content-center align-items-center">
-            <div className="fade-in-up-text" style={{ marginTop: "-3px" }}>
+            <div className="fade-in-up-text" style={{ marginTop: "30px" }}>
               <Container>
                 <div style={{ backgroundColor: 'rgba(78, 172, 209, 0.18)', padding: '1%', borderRadius: '3rem' }}>
                   <h1 className="display-3" style={{ fontWeight: "bold", color: 'rgba(0, 0, 0, 1)' }}>밥상친구</h1>

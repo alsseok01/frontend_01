@@ -15,7 +15,6 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
   const [editedEventText, setEditedEventText] = useState('');
   const [newEventText, setNewEventText] = useState('');
 
-  // ✨ 1. 확장된 카테고리에 맞는 색상 정보를 정의
   const categoryColors = {
     '한식': '#0d6efd',
     '중식': '#dc3545',
@@ -28,19 +27,6 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
 
   const [pendingEvent, setPendingEvent] = useState(null);
   const [today] = useState(new Date());
-
-  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-
-  const startDay = firstDayOfMonth.getDay();
-  const daysInMonth = lastDayOfMonth.getDate();
-
-  const handleEventClick = (event, date) => {
-    setSelectedEvent(event);
-    setSelectedDate(date);
-    setEditedEventText(event.text);
-    setEditModalOpen(true);
-  };
 
   useEffect(() => {
     if (scheduleModalData && scheduleModalData.poi) {
@@ -66,7 +52,6 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
     
     if (!isAuthenticated) {
       alert("로그인 후 이용해주세요");
-      // ✨ 3. props로 받은 onNavigate를 사용합니다.
       if (onNavigate) onNavigate("login");
       return;
     }
@@ -90,21 +75,32 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
   const addEvent = () => {
     if (!isAuthenticated) {
       alert("로그인 후 이용해주세요");
-      // ✨ 3. props로 받은 onNavigate를 사용합니다.
       if (onNavigate) onNavigate("login");
       return;
     }
     if (newEventText.trim() === '') return;
     if (!selectedDate) return;
 
-    // ✨ 2. 일정 생성 시 카테고리 정보로 색상을 결정
     const category = pendingEvent ? pendingEvent.category : '기타';
     const color = categoryColors[category] || categoryColors['기타'];
-
+    
     const newEvent = { id: Date.now(), text: newEventText, color: color };
+    
+    // TODO: 백엔드 연동 시, 아래 setEvents를 호출하기 전에
+    // 서버에 이 newEvent 정보를 저장하는 API를 호출해야 합니다.
+    // (POST /api/schedules)
+    // 서버는 저장 후 생성된 실제 ID를 포함한 완전한 이벤트 객체를 반환해야 하며,
+    // 그 객체를 사용하여 setEvents를 호출하는 것이 좋습니다.
+    // 예: const response = await fetch('/api/schedules', {
+    //       method: 'POST',
+    //       body: JSON.stringify(newEvent),
+    //       headers: { 'Content-Type': 'application/json' }
+    //     });
+    //     const savedEvent = await response.json();
     
     setEvents(prev => {
         const existingEvents = prev[selectedDate] || [];
+        // 예시: return { ...prev, [selectedDate]: [...existingEvents, savedEvent] };
         return {
             ...prev,
             [selectedDate]: [...existingEvents, newEvent]
@@ -120,17 +116,28 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
     if (editedEventText.trim() === '') return;
     if (!selectedDate || !events[selectedDate]) return;
 
+    // TODO: 백엔드 연동 시, 서버에 이 수정 사항을 저장하는 API를 호출해야 합니다.
+    // (PUT 또는 PATCH /api/schedules/{selectedEvent.id})
     const updatedEvents = events[selectedDate].map(event =>
       event.id === selectedEvent.id ? { ...event, text: editedEventText } : event
     );
     setEvents(prev => ({ ...(prev || {}), [selectedDate]: updatedEvents }));
     setEditModalOpen(false);
   };
+  
+  const handleEventClick = (event, date) => {
+    setSelectedEvent(event);
+    setSelectedDate(date);
+    setEditedEventText(event.text);
+    setEditModalOpen(true);
+  };
 
   const deleteEvent = () => {
     if (!isAuthenticated) { return; }
     if (!selectedDate || !events[selectedDate]) return;
-
+    
+    // TODO: 백엔드 연동 시, 서버에 이 이벤트를 삭제하는 API를 호출해야 합니다.
+    // (DELETE /api/schedules/{selectedEvent.id})
     const filteredEvents = events[selectedDate].filter(event => event.id !== selectedEvent.id);
     setEvents(prev => ({ ...(prev || {}), [selectedDate]: filteredEvents }));
     setEditModalOpen(false);
@@ -142,7 +149,6 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
     const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
     const startDay = firstDayOfMonth.getDay();
     const daysInMonth = lastDayOfMonth.getDate();
-
     const limitDate = new Date();
     limitDate.setDate(today.getDate() + 21);
 
@@ -162,7 +168,6 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
         <div 
           key={day} 
           className="border p-2 position-relative" 
-          // ✨ 3. 비활성화 조건에 따라 스타일과 클릭 이벤트를 제어합니다.
           style={{ 
             minHeight: '100px', 
             cursor: isDisabled ? 'not-allowed' : 'pointer', 
@@ -173,17 +178,18 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
           <strong style={{ color: isDisabled ? '#6c757d' : '#000' }}>{day}</strong>
           <div className="d-flex flex-wrap mt-1">
             {dayEvents.map((event, index) => (
-              <Badge 
-                key={event.id} 
-                style={{ backgroundColor: event.color, marginRight: '4px', marginBottom: '4px', cursor: 'pointer' }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!isDisabled) handleEventClick(event, dateStr);
-                }}
-              >
-                {index + 1}
-              </Badge>
-            ))}
+                <Badge 
+                  key={event.id} 
+                  style={{ backgroundColor: event.color, marginRight: '4px', marginBottom: '4px', cursor: 'pointer' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isDisabled) handleEventClick(event, dateStr);
+                  }}
+                >
+                  {index + 1}
+                </Badge>
+              )
+            )}
           </div>
         </div>
       );
@@ -252,3 +258,4 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
 };
 
 export default CalendarComponent;
+

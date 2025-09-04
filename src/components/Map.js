@@ -3,7 +3,7 @@ import { Button, Card, CardBody, CardHeader, Row, Col, Modal, ModalHeader, Modal
 import { useAuth } from '../contexts/AuthContext';
 import myLocationIcon from '../images/map_logo.png';
 
-const MapComponent = ({ setScheduleModalData, activeFoodFilters, setActiveFoodFilters, activeDistance, setActiveDistance, selectedTime, setSelectedTime, setNearbyPlaces, userLocation, setUserLocation, selectedPlace }) => {
+const MapComponent = ({ setScheduleModalData, activeFoodFilters, setActiveFoodFilters, activeDistance, setActiveDistance, selectedTime, setSelectedTime, setNearbyPlaces, userLocation, setUserLocation, selectedPlace, setMobileView }) => {
   const { isAuthenticated, onNavigate } = useAuth();
   const mapContainerRef = useRef(null);
   const [isFilterModalOpen, setFilterModalOpen] = useState(false);
@@ -47,7 +47,6 @@ const MapComponent = ({ setScheduleModalData, activeFoodFilters, setActiveFoodFi
     userLocationRef.current = userLocation;
   }, [userLocation]);
 
-  // ✨ 1. 카테고리 문자열에서 키워드를 추출하는 함수
   const parseCategory = (categoryName) => {
     if (!categoryName) return '기타';
     if (categoryName.includes('한식')) return '한식';
@@ -59,7 +58,6 @@ const MapComponent = ({ setScheduleModalData, activeFoodFilters, setActiveFoodFi
     return '기타';
   };
 
-  // ✨ 2. 일정 추가 버튼 클릭 시 카테고리 정보까지 전달하는 함수
   const attachInfoWindowHandler = (place) => {
     setTimeout(() => {
       const btn = document.getElementById(`schedule-btn-${place.id}`);
@@ -77,6 +75,10 @@ const MapComponent = ({ setScheduleModalData, activeFoodFilters, setActiveFoodFi
               category: category 
             } 
           });
+          // ✅ 모바일 뷰 전환 함수 호출
+          if (setMobileView) {
+            setMobileView('calendar');
+          }
         };
       }
     }, 0);
@@ -155,7 +157,8 @@ const MapComponent = ({ setScheduleModalData, activeFoodFilters, setActiveFoodFi
 
         const newMarkerData = allPlaces.map(place => {
             const marker = new window.kakao.maps.Marker({ map: map, position: new window.kakao.maps.LatLng(place.y, place.x) });
-            const content = `<div style="padding:5px; font-size:12px; min-width: 200px;"><strong>${place.place_name}</strong><br><span style="color:gray;">${place.road_address_name || place.address_name}</span><br><span style="color:blue;">${place.phone || '전화번호 정보 없음'}</span><a href="${place.place_url}" target="_blank" style="color:green; display:block; margin-top:5px;">상세보기</a><button id="schedule-btn-${place.id}" class="btn btn-primary btn-sm mt-2 w-100">일정 추가</button></div>`;
+            // ✅ [수정] 인포윈도우 스타일에 max-width와 word-wrap을 추가하여 가로 길이 문제를 해결합니다.
+            const content = `<div style="padding:5px; font-size:12px; min-width: 200px; max-width: 250px; word-wrap: break-word;"><strong>${place.place_name}</strong><br><span style="color:gray;">${place.road_address_name || place.address_name}</span><br><span style="color:blue;">${place.phone || '전화번호 정보 없음'}</span><a href="${place.place_url}" target="_blank" style="color:green; display:block; margin-top:5px;">상세보기</a><button id="schedule-btn-${place.id}" class="btn btn-primary btn-sm mt-2 w-100">일정 추가</button></div>`;
             const infowindow = new window.kakao.maps.InfoWindow({ content, removable: true });
 
             window.kakao.maps.event.addListener(marker, 'click', () => {
@@ -170,7 +173,7 @@ const MapComponent = ({ setScheduleModalData, activeFoodFilters, setActiveFoodFi
     };
 
     fetchAllPlaces();
-  }, [activeFoodFilters, activeDistance, map, setScheduleModalData, setNearbyPlaces, isAuthenticated, onNavigate]);
+  }, [activeFoodFilters, activeDistance, map, setScheduleModalData, setNearbyPlaces, isAuthenticated, onNavigate, setMobileView]);
 
   useEffect(() => {
     if (!selectedPlace || !map || placeMarkers.length === 0) return;

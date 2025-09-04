@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Card, CardBody, CardHeader, Row, Col, ListGroup, ListGroupItem, Badge, Button } from 'reactstrap';
 import MapComponent from '../components/Map';
 import CalendarComponent from '../components/Calendar';
@@ -38,7 +38,6 @@ const NearbyPlacesList = ({ places, userLocation, onPlaceClick }) => {
   }, [places, userLocation]);
 
   const handlePlaceClick = (place) => {
-    // ✅ [수정] !user를 !isAuthenticated로 변경
     if (!isAuthenticated) {
       alert("로그인 후 이용 가능합니다!");
       onNavigate("login");
@@ -77,47 +76,49 @@ const NearbyPlacesList = ({ places, userLocation, onPlaceClick }) => {
   );
 };
 
-const SchedulePage = ({ events, setEvents }) => {
+const SchedulePage = () => {
+  // TODO: 백엔드 연동 시, 이 events 상태는 페이지가 로드될 때 useEffect를 사용하여
+  // 사용자의 일정 정보를 서버로부터 받아와서(fetch) 채워야 합니다.
+  const [events, setEvents] = useState({});
+
   const [activeFoodFilters, setActiveFoodFilters] = useState({
       '한식': true, '중식': true, '일식': true, '양식': true, '분식': true, '카페': true,
   });
   const [activeDistance, setActiveDistance] = useState(500);
-  
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-
-  const [isDesktop,] = useState(window.innerWidth >= 992);
-
-  //const [activeFoodFilters, setActiveFoodFilters] = useState({});
-  //const [activeDistance, setActiveDistance] = useState(null);
-
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 992);
   const [selectedTime, setSelectedTime] = useState(() => new Date().getHours());
   const [scheduleModalData, setScheduleModalData] = useState(null);
   const [nearbyPlaces, setNearbyPlaces] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
   const [selectedPlace, setSelectedPlace] = useState(null);
+  const [mobileView, setMobileView] = useState('map');
 
-  
+  useEffect(() => {
+    // TODO: 백엔드 연동 시 여기에 API 호출 코드를 추가합니다.
+    // const fetchUserSchedules = async () => {
+    //   const response = await fetch('/api/schedules/me');
+    //   const data = await response.json();
+    //   setEvents(data); // 서버에서 받은 데이터로 상태 업데이트
+    // }
+    // fetchUserSchedules();
 
-  // ✅ 기능 실행 시 로그인 체크 (일정 추가 등)
- /*const handleCalendarAction = (date, newEvent) => {
-    // ✅ [수정] !user를 !isAuthenticated로 변경 (이중 체크로 안전성 강화)
-    if (!isAuthenticated) {
-      alert("로그인 후 이용 가능합니다!");
-      onNavigate("login");
-      return;
+    const handleResize = () => setIsDesktop(window.innerWidth >= 992);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleMapPinClick = useCallback((data) => {
+    setScheduleModalData(data);
+    if (!isDesktop) {
+        setMobileView('calendar');
     }
-    setEvents(prev => ({
-      ...(prev || {}),
-      [date]: [...((prev && prev[date]) || []), newEvent]
-    }));
-  };*/
-
+  }, [isDesktop]);
 
   return (
     <>
       <div className="d-flex flex-column text-white text-center position-relative">
         {isDesktop ? (
+          // --- 데스크탑 레이아웃 ---
           <>
             <div className="flex-grow-1 d-flex align-items-start justify-content-center pt-0 mt-0">
               <Container>
@@ -132,8 +133,7 @@ const SchedulePage = ({ events, setEvents }) => {
                 <Card>
                   <CardBody>
                     <MapComponent
-                      //onNavigate={onNavigate}
-                      setScheduleModalData={setScheduleModalData}
+                      setScheduleModalData={handleMapPinClick}
                       activeFoodFilters={activeFoodFilters}
                       setActiveFoodFilters={setActiveFoodFilters}
                       activeDistance={activeDistance}
@@ -148,80 +148,65 @@ const SchedulePage = ({ events, setEvents }) => {
                   </CardBody>
                 </Card>
               </Col>
-
               <Col xs={12} lg={4} className="mb-4 order-lg-2">
                 <NearbyPlacesList
                   places={nearbyPlaces}
                   userLocation={userLocation}
                   onPlaceClick={setSelectedPlace}
-                  
                 />
               </Col>
-
               <Col xs={12} lg={8} className="mb-4 order-lg-1">
                 <CalendarComponent
                   events={events}
-                  setEvents={setEvents} // ✅ 로그인 체크 후 이벤트 추가
-                  activeFoodFilters={activeFoodFilters}
+                  setEvents={setEvents}
                   scheduleModalData={scheduleModalData}
                   setScheduleModalData={setScheduleModalData}
                   selectedTime={selectedTime}
-                  //onNavigate={onNavigate}
                 />
               </Col>
             </Row>
           </>
         ) : (
+          // --- 모바일 레이아웃 ---
           <div className="flex-grow-1 d-flex flex-column justify-content-center align-items-center">
-            <div className="fade-in-up-text" style={{ marginTop: "100px" }}>
-              <Container>
-                <div style={{ backgroundColor: 'rgba(78, 172, 209, 0)', padding: '1%', borderRadius: '3rem' }}>
-                  <h1 className="display-3" style={{ fontWeight: "bold", color: 'rgba(0, 0, 0, 1)' }}>일정 만들기</h1>
-                  <p className="lead mt-3" style={{ whiteSpace: 'nowrap', fontWeight: "bold", color: 'rgba(0, 0, 0, 1)' }}>내 주변 음식점 찾아 약속을 잡아보세요!</p>
-                </div>
-              </Container>
-            </div>
-            <Row>
-              <Col xs={12} className="mb-4">
-                <Card>
-                  <CardBody>
-                    <MapComponent
-                      //onNavigate={onNavigate}
-                      setScheduleModalData={setScheduleModalData}
-                      activeFoodFilters={activeFoodFilters}
-                      setActiveFoodFilters={setActiveFoodFilters}
-                      activeDistance={activeDistance}
-                      setActiveDistance={setActiveDistance}
-                      selectedTime={selectedTime}
-                      setSelectedTime={setSelectedTime}
-                      setNearbyPlaces={setNearbyPlaces}
-                      userLocation={userLocation}
-                      setUserLocation={setUserLocation}
-                      selectedPlace={selectedPlace}
-                    />
-                  </CardBody>
-                </Card>
-              </Col>
-
-              <Col xs={12} lg={4} className="mb-4 order-lg-2">
-                <NearbyPlacesList
-                  places={nearbyPlaces}
-                  userLocation={userLocation}
-                  onPlaceClick={setSelectedPlace}
-                />
-              </Col>
-
-              <Col xs={12} lg={8} className="mb-4 order-lg-1">
-                <CalendarComponent
-                  events={events}
-                  setEvents={setEvents} // ✅ 로그인 체크 후 이벤트 추가
-                  activeFoodFilters={activeFoodFilters}
-                  scheduleModalData={scheduleModalData}
-                  setScheduleModalData={setScheduleModalData}
-                  selectedTime={selectedTime}
-                  //onNavigate={onNavigate}
-                />
-              </Col>
+             <div className="fade-in-up-text" style={{ marginTop: "100px" }}>
+               <Container>
+                 <div style={{ backgroundColor: 'rgba(78, 172, 209, 0)', padding: '1%', borderRadius: '3rem' }}>
+                   <h1 className="display-3" style={{ fontWeight: "bold", color: 'rgba(0, 0, 0, 1)' }}>일정 만들기</h1>
+                   <p className="lead mt-3" style={{ whiteSpace: 'nowrap', fontWeight: "bold", color: 'rgba(0, 0, 0, 1)' }}>내 주변 음식점 찾아 약속을 잡아보세요!</p>
+                 </div>
+               </Container>
+             </div>
+            <Row className="w-100">
+                {mobileView === 'map' && (
+                    <>
+                        <Col xs={12} className="mb-4">
+                            <Card><CardBody>
+                                <MapComponent
+                                    setScheduleModalData={handleMapPinClick}
+                                    activeFoodFilters={activeFoodFilters} setActiveFoodFilters={setActiveFoodFilters}
+                                    activeDistance={activeDistance} setActiveDistance={setActiveDistance}
+                                    selectedTime={selectedTime} setSelectedTime={setSelectedTime}
+                                    setNearbyPlaces={setNearbyPlaces} userLocation={userLocation} setUserLocation={setUserLocation}
+                                    selectedPlace={selectedPlace}
+                                />
+                            </CardBody></Card>
+                        </Col>
+                        <Col xs={12} className="mb-4">
+                            <NearbyPlacesList places={nearbyPlaces} userLocation={userLocation} onPlaceClick={setSelectedPlace} />
+                        </Col>
+                    </>
+                )}
+                {mobileView === 'calendar' && (
+                    <Col xs={12} className="mb-4">
+                        <Button color="secondary" block onClick={() => setMobileView('map')} className="mb-3">지도로 돌아가기</Button>
+                        <CalendarComponent
+                            events={events} setEvents={setEvents}
+                            scheduleModalData={scheduleModalData} setScheduleModalData={setScheduleModalData}
+                            selectedTime={selectedTime}
+                        />
+                    </Col>
+                )}
             </Row>
           </div>
         )}
@@ -231,3 +216,4 @@ const SchedulePage = ({ events, setEvents }) => {
 };
 
 export default SchedulePage;
+

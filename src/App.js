@@ -15,7 +15,7 @@ function App() {
   // ✅ Context에서 필요한 모든 것을 가져옵니다. App.js의 역할은 오직 페이지를 보여주는 것뿐입니다.
   const { currentPage, authSubPage, login, logout, user, setUser, onNavigate } = useAuth();
   
-  const [events, setEvents] = useState({});
+  //const [events, setEvents] = useState({});
 
   useEffect(() => {
     if (window.location.pathname === '/oauth/redirect' && currentPage !== 'oauthRedirect') {
@@ -40,7 +40,7 @@ function App() {
           case 'home':
               return <HomePage />;
           case 'schedule':
-             return <SchedulePage events={events} setEvents={setEvents} />;
+             return <SchedulePage /*events={events} setEvents={setEvents}*/ />;
           case 'profile':
               //return user ? <ProfilePage user={user} setUser={setUser} onNavigate={onNavigate} /> : <HomePage />;
               return <ProfilePage user={user || { preferences: {} }} setUser={setUser} onNavigate={onNavigate} />;
