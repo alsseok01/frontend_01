@@ -34,10 +34,13 @@ export const AuthProvider = ({ children }) => {
       setUser({
         name: '홍길동 (기본값)',
         profileImage: 'https://placehold.co/100x100/EFEFEF/AAAAAA&text=User',
-        age: '1',                // 빈 값이라도 속성 자체는 있어야 합니다.
-        preferences: {},        // 필수! null이나 undefined가 아닌 빈 객체여야 합니다.
-        bio: '1',                // 빈 값이라도 속성 자체는 있어야 합니다.
-        email: '1@1',              // 빈 값이라도 속성 자체는 있어야 합니다.
+        age: 25,                // 기본 나이 추가
+        preferences: {          // 기본 취향 추가 (빈 객체)
+          '한식': true,
+          '맵찔이': true,
+        },
+        bio: '기본 자기소개입니다.', // 기본 자기소개 추가
+        email: 'test@example.com', // 기본 이메일 추가
       });
     }
     setCurrentPage('home');

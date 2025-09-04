@@ -1,0 +1,27 @@
+.board-container {
+  max-width: 1200px;
+}
+
+.board-header {
+  border-bottom: 2px solid #eee;
+  padding-bottom: 1rem;
+}
+
+.board-title {
+  font-weight: 700;
+}
+
+.post-card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  border: 0;
+}
+
+.post-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+}
