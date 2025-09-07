@@ -79,7 +79,7 @@ const NearbyPlacesList = ({ places, userLocation, onPlaceClick }) => {
 const SchedulePage = () => {
   // TODO: 백엔드 연동 시, 이 events 상태는 페이지가 로드될 때 useEffect를 사용하여
   // 사용자의 일정 정보를 서버로부터 받아와서(fetch) 채워야 합니다.
-  const [events, setEvents] = useState({});
+  const { events, setEvents } = useAuth();
 
   const [activeFoodFilters, setActiveFoodFilters] = useState({
       '한식': true, '중식': true, '일식': true, '양식': true, '분식': true, '카페': true,

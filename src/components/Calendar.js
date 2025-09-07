@@ -15,6 +15,8 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
   const [editedEventText, setEditedEventText] = useState('');
   const [newEventText, setNewEventText] = useState('');
 
+  const [numberOfParticipants, setNumberOfParticipants] = useState(2);
+  const [editedParticipants, setEditedParticipants] = useState(2);
   const categoryColors = {
     '한식': '#0d6efd',
     '중식': '#dc3545',
@@ -83,8 +85,14 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
 
     const category = pendingEvent ? pendingEvent.category : '기타';
     const color = categoryColors[category] || categoryColors['기타'];
-    
-    const newEvent = { id: Date.now(), text: newEventText, color: color };
+
+    const newEvent = { 
+      id: Date.now(), 
+      text: newEventText, 
+      color: color,
+      participants: numberOfParticipants, // 인원수 정보 추가
+      currentParticipants: 1
+    };
     
     // TODO: 백엔드 연동 시, 아래 setEvents를 호출하기 전에
     // 서버에 이 newEvent 정보를 저장하는 API를 호출해야 합니다.
@@ -118,9 +126,20 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
 
     // TODO: 백엔드 연동 시, 서버에 이 수정 사항을 저장하는 API를 호출해야 합니다.
     // (PUT 또는 PATCH /api/schedules/{selectedEvent.id})
-    const updatedEvents = events[selectedDate].map(event =>
-      event.id === selectedEvent.id ? { ...event, text: editedEventText } : event
-    );
+    const updatedEvents = events[selectedDate].map(event => {
+      if (event.id === selectedEvent.id) {
+        // ✅ 2. 총 모집 인원을 수정할 때, 현재 참여 인원보다 적게 설정할 수 없도록 방어 코드를 추가합니다.
+        const currentP = event.currentParticipants || 1;
+        const newTotalP = Math.max(currentP, editedParticipants);
+
+        return { 
+          ...event, 
+          text: editedEventText, 
+          participants: newTotalP 
+        };
+      }
+      return event;
+    });
     setEvents(prev => ({ ...(prev || {}), [selectedDate]: updatedEvents }));
     setEditModalOpen(false);
   };
@@ -129,6 +148,7 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
     setSelectedEvent(event);
     setSelectedDate(date);
     setEditedEventText(event.text);
+    setEditedParticipants(event.participants || 2);
     setEditModalOpen(true);
   };
 
@@ -177,7 +197,7 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
         >
           <strong style={{ color: isDisabled ? '#6c757d' : '#000' }}>{day}</strong>
           <div className="d-flex flex-wrap mt-1">
-            {dayEvents.map((event, index) => (
+            {dayEvents.map((event) => (
                 <Badge 
                   key={event.id} 
                   style={{ backgroundColor: event.color, marginRight: '4px', marginBottom: '4px', cursor: 'pointer' }}
@@ -186,7 +206,7 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
                     if (!isDisabled) handleEventClick(event, dateStr);
                   }}
                 >
-                  {index + 1}
+                  {`${event.currentParticipants || 1}/${event.participants}`}
                 </Badge>
               )
             )}
@@ -220,7 +240,28 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
       <Modal isOpen={addModalOpen} toggle={() => setAddModalOpen(false)}>
         <ModalHeader toggle={() => setAddModalOpen(false)}>{selectedDate} 일정 추가</ModalHeader>
         <ModalBody>
-          <Input type="text" value={newEventText} onChange={(e) => setNewEventText(e.target.value)} placeholder="일정 입력" />
+          <Input type="text" value={newEventText} onChange={(e) => setNewEventText(e.target.value)} placeholder="일정 내용 입력" />
+          
+          {/* ✅ 3. 인원수 선택 UI를 추가합니다. */}
+          <div className="d-flex align-items-center justify-content-center mt-3">
+            <Button 
+              color="secondary" 
+              onClick={() => setNumberOfParticipants(p => Math.max(2, p - 1))} // 최소 2명
+            >
+              -
+            </Button>
+            <strong className="mx-3" style={{ fontSize: '1.2rem', minWidth: '80px', textAlign: 'center' }}>
+              {numberOfParticipants}명
+            </strong>
+            <Button 
+              color="secondary" 
+              onClick={() => setNumberOfParticipants(p => Math.min(8, p + 1))} // 최대 8명
+            >
+              +
+            </Button>
+          </div>
+          <p className="text-center text-muted mt-2 small">참여 인원을 선택하세요 (2~8명)</p>
+
         </ModalBody>
         <ModalFooter>
           <Button color="primary" onClick={addEvent}>추가</Button>
@@ -232,6 +273,27 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
         <ModalHeader toggle={() => setEditModalOpen(false)}>{selectedDate} 일정 수정/삭제</ModalHeader>
         <ModalBody>
           <Input type="text" value={editedEventText} onChange={(e) => setEditedEventText(e.target.value)} />
+
+          {/* ✅ 4. '일정 추가' 때와 동일한 인원수 선택 UI를 추가합니다. */}
+          <div className="d-flex align-items-center justify-content-center mt-3">
+            <Button 
+              color="secondary" 
+              onClick={() => setEditedParticipants(p => Math.max(2, p - 1))}
+            >
+              -
+            </Button>
+            <strong className="mx-3" style={{ fontSize: '1.2rem', minWidth: '80px', textAlign: 'center' }}>
+              {editedParticipants}명
+            </strong>
+            <Button 
+              color="secondary" 
+              onClick={() => setEditedParticipants(p => Math.min(8, p + 1))}
+            >
+              +
+            </Button>
+          </div>
+          <p className="text-center text-muted mt-2 small">참여 인원을 수정하세요 (2~8명)</p>
+
         </ModalBody>
         <ModalFooter>
           <Button color="danger" onClick={deleteEvent}>삭제</Button>
@@ -245,9 +307,13 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
         <ModalBody>
           <ListGroup>
             {(events[selectedDate] || []).map(event => (
-              <ListGroupItem key={event.id} className="d-flex align-items-center">
-                <Badge style={{ backgroundColor: event.color, marginRight: '10px' }}>&nbsp;</Badge>
-                {event.text}
+              <ListGroupItem key={event.id} className="d-flex justify-content-between align-items-center">
+                <div>
+                  <Badge style={{ backgroundColor: event.color, marginRight: '10px' }}>&nbsp;</Badge>
+                  {event.text}
+                </div>
+                {/* 인원수를 뱃지로 표시 */}
+                <Badge color="dark" pill>{`${event.currentParticipants || 1} / ${event.participants} 명`}</Badge>
               </ListGroupItem>
             ))}
           </ListGroup>
