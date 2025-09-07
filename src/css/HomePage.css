@@ -115,3 +115,29 @@
 .feature-card.is-visible {
   animation: fadeInUp 1s ease-out forwards; /* is-visible 클래스가 추가되면 애니메이션 실행 */
 }
+
+/* --- 드롭다운 메뉴 z-index 조정 --- */
+.user-profile-dropdown .dropdown-menu {
+  z-index: 1100 !important;
+}
+
+.custom-dropdown-item {
+  padding: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.custom-dropdown-item:hover {
+  background-color: #9ccbb8; /* 연한 회색 */
+}
+
+  /* 반투명 배경의 z-index를 1035로 설정 */
+.offcanvas-backdrop {
+  z-index: 1035 !important;
+}
+
+/* 메뉴 패널 자체의 z-index를 1040으로 설정하여 배경보다 위에 오게 함 */
+.custom-offcanvas.offcanvas {
+  z-index: 1040 !important;
+}
+  

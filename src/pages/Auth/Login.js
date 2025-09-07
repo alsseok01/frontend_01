@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import { Button, Card, CardBody, FormGroup, Form, Input, InputGroup, InputGroupText, Container, Row, Col } from 'reactstrap';
 
-const LoginPage = ({ onLogin, onSwitchMode }) => {
+const LoginPage = ({ onSwitchMode }) => { 
+  const { login } = useAuth(); // AuthContext에서 login 함수를 직접 가져옵니다.
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (email && password) {
-      alert('로그인 성공!');
-      onLogin();
-    } else {
+    if (!email || !password) {
       alert('이메일과 비밀번호를 입력해주세요.');
+      return;
+    }
+    try {
+      await login(email, password); // AuthContext의 login 함수에 email, password 전달
+    } catch (error) {
+      // 로그인 실패 시 AuthContext에서 던진 에러를 처리할 수 있습니다.
     }
   };
   
