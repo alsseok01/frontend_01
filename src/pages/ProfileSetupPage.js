@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Button, Card, CardBody, Container, Row, Col, FormGroup, Label, Input } from 'reactstrap';
-
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 // ✨ 1. 선택 가능한 기본 이미지 목록을 정의합니다. (나중에 이 URL들을 원하는 이미지로 바꾸세요)
 import bearImage from '../images/bear.png';
 import duckImage from '../images/duck.png';
@@ -14,8 +15,9 @@ const defaultImages = [
   frogImage,
 ];
 
-const ProfileSetupPage = ({ onSetupComplete, animationClass }) => {
+const ProfileSetupPage = ({ animationClass }) => {
   const [step, setStep] = useState(1);
+  const { updateUser } = useAuth();
   const fileInputRef = useRef(null);
   
   const [formData, setFormData] = useState({
@@ -74,11 +76,27 @@ const ProfileSetupPage = ({ onSetupComplete, animationClass }) => {
     setStep(step - 1);
   };
   
-  const handleSubmit = () => {
-    console.log("최종 설정 데이터:", formData);
-    alert("설정이 완료되었습니다!");
-    onSetupComplete(formData);
-  }
+  const handleSubmit = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      
+      // 1. 백엔드에 프로필 정보 업데이트 요청
+      const response = await axios.put(`${API_URL}/api/user/profile`, formData, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      // 2. 요청 성공 시, 서버로부터 받은 최신 사용자 정보(isNewUser: false 포함)로 AuthContext 상태 업데이트
+      updateUser(response.data);
+      
+      alert("설정이 완료되었습니다! 이제 밥상친구를 시작해보세요.");
+      // updateUser가 호출되면 App.js가 자동으로 HomePage로 화면을 전환해줍니다.
+
+    } catch (error) {
+      console.error("프로필 설정 실패:", error);
+      alert("프로필 저장에 실패했습니다. 다시 시도해주세요.");
+    }
+  };
 
   const renderStepContent = () => {
     switch (step) {

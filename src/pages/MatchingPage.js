@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import axios from 'axios';
 import {
   Container,
   Row,
@@ -21,66 +22,8 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import '../css/HomePage.css';
 
-// --- 가상 데이터 ---
-// TODO: 백엔드 연동 시 이 부분은 삭제하고, API를 통해 데이터를 받아옵니다.
-const allSchedules = [
-  {
-    id: 101,
-    userId: 'user1',
-    userName: '김민준',
-    date: '2025-09-15',
-    time: '19:00',
-    place: {
-      name: '강남불백',
-      category: '한식',
-      lat: 37.4980, // 강남역 근처
-      lng: 127.0276
-    },
-    userProfile: {
-        age: 28,
-        gender: '남성',
-        preferences: {'한식': true, '매운맛': true}
-    }
-  },
-  {
-    id: 102,
-    userId: 'user2',
-    userName: '이서아',
-    date: '2025-09-15',
-    time: '13:00',
-    place: {
-      name: '호랑이식당',
-      category: '일식',
-      lat: 37.4995, // 강남역 근처
-      lng: 127.0265
-    },
-    userProfile: {
-        age: 25,
-        gender: '여성',
-        preferences: {'일식': true, '분식': true}
-    }
-  },
-  {
-    id: 103,
-    userId: 'user3',
-    userName: '박준서',
-    date: '2025-09-18',
-    time: '20:00',
-    place: {
-      name: '브루클린 더 버거 조인트',
-      category: '양식',
-      lat: 37.5228, // 가로수길 근처
-      lng: 127.0221
-    },
-    userProfile: {
-        age: 31,
-        gender: '남성',
-        preferences: {'양식': true, '치맥': true}
-    }
-  },
-];
 
-// --- 유틸리티 함수: 거리 계산 ---
+// --- 유틸리티 및 하위 컴포넌트 (변경 없음) ---
 const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
     if ((lat1 === lat2) && (lon1 === lon2)) return 0;
     const radlat1 = Math.PI * lat1 / 180;
@@ -95,10 +38,9 @@ const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
     return dist;
 };
 
-// --- Calendar Component ---
 const MatchingCalendar = ({ schedules, onDateSelect, selectedDate }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
-
+    const [today] = useState(new Date());
     const schedulesByDate = useMemo(() => {
         return schedules.reduce((acc, schedule) => {
             (acc[schedule.date] = acc[schedule.date] || []).push(schedule);
@@ -117,24 +59,39 @@ const MatchingCalendar = ({ schedules, onDateSelect, selectedDate }) => {
         const startDay = firstDayOfMonth.getDay();
         const daysInMonth = lastDayOfMonth.getDate();
 
+        const limitDate = new Date();
+        limitDate.setDate(today.getDate() + 21);
+
         for (let i = 0; i < startDay; i++) {
             calendarDays.push(<div key={`empty-${i}`} className="border p-2" style={{ minHeight: '80px', backgroundColor: '#f8f9fa' }}></div>);
         }
 
         for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
             const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const daySchedules = schedulesByDate[dateStr] || [];
             const isSelected = dateStr === selectedDate;
+            
+            const isPast = date < new Date(today.toDateString());
+            const isFutureLimit = date > limitDate;
+            const isDisabled = isPast || isFutureLimit;
 
             calendarDays.push(
                 <div
                     key={day}
                     className={`border p-2 position-relative ${isSelected ? 'bg-primary text-white' : ''}`}
-                    style={{ minHeight: '80px', cursor: 'pointer', transition: 'background-color 0.2s' }}
-                    onClick={() => onDateSelect(isSelected ? null : dateStr)}
+                    style={{ 
+                        minHeight: '80px',
+                        cursor: isDisabled ? 'not-allowed' : 'pointer', 
+                        backgroundColor: isDisabled ? '#e9ecef' : (isSelected ? undefined : '#fff'),
+                        color: isDisabled ? '#adb5bd' : (isSelected ? '#fff' : '#000'),
+                        transition: 'background-color 0.2s, opacity 0.2s',
+                        opacity: isDisabled ? 0.6 : 1,
+                    }}
+                    onClick={isDisabled ? null : () => onDateSelect(isSelected ? null : dateStr)}
                 >
                     <strong>{day}</strong>
-                    {daySchedules.length > 0 && <Badge color="danger" pill className="position-absolute top-0 end-0 mt-1 me-1">{daySchedules.length}</Badge>}
+                    {!isPast && daySchedules.length > 0 && <Badge color="info" pill className="position-absolute top-0 end-0 mt-1 me-1">{daySchedules.length}</Badge>}
                 </div>
             );
         }
@@ -158,8 +115,7 @@ const MatchingCalendar = ({ schedules, onDateSelect, selectedDate }) => {
     );
 };
 
-// --- Schedule List Component ---
-const ScheduleList = ({ schedules, onScheduleSelect, selectedSchedule, selectedDate }) => {
+const ScheduleList = ({ schedules, onScheduleSelect, selectedSchedule, selectedDate, onViewProfile }) => {
     return (
         <Card style={{ height: '525px' }}>
             <CardHeader><h4>{selectedDate ? `${selectedDate.split('-')[2]}일 일정 목록` : '일정 목록'}</h4></CardHeader>
@@ -174,8 +130,28 @@ const ScheduleList = ({ schedules, onScheduleSelect, selectedSchedule, selectedD
                                 onClick={() => onScheduleSelect(schedule)}
                                 style={{cursor: 'pointer'}}
                             >
-                                <strong>{schedule.place.name}</strong> ({schedule.time})
-                                <div className="small text-muted">{schedule.userName} | {schedule.distance ? `${Math.round(schedule.distance)}m` : ''}</div>
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{schedule.placeName}</strong> ({schedule.time}:00)
+                                        <div
+                                            className="small text-muted d-flex align-items-center mt-1"
+                                            style={{ cursor: 'pointer' }}
+                                            onClick={(e) => { 
+                                                e.stopPropagation();
+                                                onViewProfile(schedule); 
+                                            }}
+                                        >
+                                            {/* ✅ 이 부분에서 상대방 프로필 이미지를 표시합니다. */}
+                                            <img
+                                                src={schedule.user.profileImage || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'}
+                                                alt={schedule.user.name}
+                                                style={{ width: '24px', height: '24px', borderRadius: '50%', marginRight: '8px', objectFit: 'cover' }}
+                                            />
+                                            {schedule.user.name}
+                                        </div>
+                                    </div>
+                                    <Badge color="dark" pill>{schedule.currentParticipants || 1} / {schedule.participants}</Badge>
+                                </div>
                             </ListGroupItem>
                         ))}
                     </ListGroup>
@@ -187,7 +163,6 @@ const ScheduleList = ({ schedules, onScheduleSelect, selectedSchedule, selectedD
     );
 };
 
-// --- Filter Modal Component ---
 const FilterModal = ({ isOpen, toggle, onApply, initialFilters }) => {
     const foodCategories = ['한식', '중식', '일식', '양식', '분식', '카페'];
     const [foodFilters, setFoodFilters] = useState(initialFilters.food);
@@ -226,19 +201,69 @@ const FilterModal = ({ isOpen, toggle, onApply, initialFilters }) => {
     );
 };
 
+const ProfileModal = ({ isOpen, toggle, schedule }) => {
+    if (!schedule || !schedule.user) return null;
 
+    const userPreferences = schedule.user.preferences ?
+        Object.keys(schedule.user.preferences).filter(key => schedule.user.preferences[key]) :
+        [];
+
+    return (
+        <Modal isOpen={isOpen} toggle={toggle} centered>
+            <ModalHeader toggle={toggle} className="d-flex align-items-center">
+                {/* ✅ 프로필 확인 창 헤더 이미지 */}
+                <img
+                    src={schedule.user.profileImage || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'}
+                    alt={schedule.user.name}
+                    style={{ width: '30px', height: '30px', borderRadius: '50%', marginRight: '10px', objectFit: 'cover' }}
+                />
+                {schedule.user.name}님의 프로필
+            </ModalHeader>
+            <ModalBody className="text-center">
+                {/* ✅ 프로필 확인 창 본문 이미지 */}
+                <img
+                    src={schedule.user.profileImage || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'}
+                    alt={schedule.user.name}
+                    className="img-fluid rounded-circle mb-3"
+                    style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                />
+                <h5 className="mt-2">{schedule.user.name}</h5>
+                <hr />
+                <h5>음식 취향</h5>
+                <div className="d-flex flex-wrap justify-content-center" style={{ gap: '8px' }}>
+                    {userPreferences.length > 0 ? (
+                        userPreferences.map(pref => (
+                            <Badge key={pref} color="info" pill style={{ fontSize: '0.9rem', padding: '8px 12px' }}>
+                                {pref}
+                            </Badge>
+                        ))
+                    ) : (
+                        <p className="text-muted">아직 설정된 취향이 없습니다.</p>
+                    )}
+                </div>
+            </ModalBody>
+            <ModalFooter>
+                <Button color="secondary" onClick={toggle}>닫기</Button>
+            </ModalFooter>
+        </Modal>
+    );
+}
+
+// --- 메인 페이지 컴포넌트 ---
 const MatchingPage = () => {
   const { user, isAuthenticated, onNavigate } = useAuth();
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 992);
   
-  // TODO: 백엔드 연동 시 이 useState는 삭제하고, useEffect 내에서 API 호출 결과로 상태를 설정합니다.
-  const [schedules, setSchedules] = useState(allSchedules);
+  const [schedules, setSchedules] = useState([]);
+  const [originalSchedules, setOriginalSchedules] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
 
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
 
   const [isFilterModalOpen, setFilterModalOpen] = useState(false);
+  const [isProfileModalOpen, setProfileModalOpen] = useState(false);
+  const [viewingSchedule, setViewingSchedule] = useState(null);
   
   const [appliedFilters, setAppliedFilters] = useState({
     food: {'한식': true, '중식': true, '일식': true, '양식': true, '분식': true, '카페': true},
@@ -246,6 +271,29 @@ const MatchingPage = () => {
   });
 
   useEffect(() => {
+    const fetchAllSchedules = async () => {
+        if (!isAuthenticated) {
+            setSchedules([]);
+            setOriginalSchedules([]);
+            return;
+        }
+        try {
+            const token = localStorage.getItem('token');
+            const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+            const response = await axios.get(`${API_URL}/api/schedules/all`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            setSchedules(response.data);
+            setOriginalSchedules(response.data);
+        } catch (error) {
+            console.error("매칭 일정을 불러오는데 실패했습니다:", error);
+            setSchedules([]);
+            setOriginalSchedules([]);
+        }
+    };
+
+    fetchAllSchedules();
+
     const handleResize = () => setIsDesktop(window.innerWidth >= 992);
     window.addEventListener('resize', handleResize);
 
@@ -254,39 +302,28 @@ const MatchingPage = () => {
       () => { setUserLocation({ lat: 37.4980, lng: 127.0276 }); }
     );
     
-    // TODO: 백엔드 연동 시 이 useEffect 내에서 fetch 또는 axios를 사용하여 서버로부터 모든 일정 데이터를 가져옵니다.
-    // 예: const fetchSchedules = async () => {
-    //      const response = await fetch('/api/schedules');
-    //      const data = await response.json();
-    //      setSchedules(data);
-    //    };
-    //    fetchSchedules();
-
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [isAuthenticated]);
+
+  const handleViewProfile = (schedule) => {
+    setViewingSchedule(schedule);
+    setProfileModalOpen(true);
+  };
 
   const handleApplyFilter = (filters) => {
     setAppliedFilters(filters);
     const { food, distance } = filters;
     
-    // TODO: 백엔드 연동 시 이 필터링 로직은 서버에 요청을 보내는 방식으로 변경됩니다.
-    // 프론트엔드에서 모든 데이터를 받아 필터링하는 대신,
-    // 서버에 필터 조건을 보내고 서버가 필터링된 결과를 보내주는 것이 효율적입니다.
-    // 예: fetch(`/api/schedules?distance=${distance}&food=${activeFoodFilters.join(',')}`)
-    
-    let tempSchedules = allSchedules;
+     let tempSchedules = originalSchedules;
 
     const activeFoodFilters = Object.keys(food).filter(key => food[key]);
     if (activeFoodFilters.length > 0) {
-        tempSchedules = tempSchedules.filter(s => activeFoodFilters.includes(s.place.category));
-    }
-    if (distance && userLocation) {
-        tempSchedules = tempSchedules.filter(s => getDistanceInMeters(userLocation.lat, userLocation.lng, s.place.lat, s.place.lng) <= distance);
+        tempSchedules = tempSchedules.filter(s => activeFoodFilters.includes(s.placeCategory));
     }
     setSchedules(tempSchedules);
   };
   
-  const handleMatchRequest = () => {
+  const handleMatchRequest = async () => {
     if (!isAuthenticated) {
         alert('매칭을 신청하려면 로그인이 필요합니다.');
         onNavigate('login');
@@ -296,67 +333,79 @@ const MatchingPage = () => {
         alert('매칭을 신청할 일정을 선택해주세요.');
         return;
     }
-    if (selectedSchedule.userId === user?.id) {
+    if (selectedSchedule.user.id === user?.id) {
         alert('자신이 만든 일정에는 매칭을 신청할 수 없습니다.');
         return;
     }
 
-    // TODO: 백엔드 연동 시 이 부분은 서버에 매칭 신청 API를 호출하는 코드로 변경됩니다.
-    // (FCM 또는 이메일 알림은 서버에서 처리)
-    // 예: await fetch('/api/matches', {
-    //      method: 'POST',
-    //      body: JSON.stringify({ scheduleId: selectedSchedule.id }),
-    //      headers: { 'Content-Type': 'application/json' }
-    //    });
-    alert(`'${selectedSchedule.userName}'님에게 매칭 신청 알림을 보냈습니다.`);
+    if (!window.confirm(`'${selectedSchedule.user.name}'님의 '${selectedSchedule.placeName}' 일정에 매칭을 신청하시겠습니까?`)) {
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('token');
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+        
+        const response = await axios.post(
+            `${API_URL}/api/matches`, 
+            { scheduleId: selectedSchedule.id },
+            { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+
+        alert(response.data);
+
+    } catch (error) {
+        console.error("매칭 신청 실패:", error);
+        if (error.response && error.response.data) {
+            alert(`매칭 신청 실패: ${error.response.data}`);
+        } else {
+            alert("매칭 신청 중 오류가 발생했습니다. 다시 시도해주세요.");
+        }
+    }
   };
 
-  const handleRandomMatch = () => {
-    if (!isAuthenticated) {
+  const handleRandomMatch = async () => {
+     if (!isAuthenticated) {
         alert('매칭을 신청하려면 로그인이 필요합니다.');
         onNavigate('login');
         return;
     }
-    if (!userLocation) {
-        alert('위치 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
-        return;
-    }
-
-    // TODO: 백엔드 연동 시, 거리 필터만 적용된 랜덤 일정을 서버에 요청합니다.
-    // 프론트엔드에서 모든 데이터를 필터링하는 대신 서버의 부담을 줄일 수 있습니다.
-    // 예: const response = await fetch(`/api/schedules/random?distance=${appliedFilters.distance}`);
-    //     const randomSchedule = await response.json();
     
-    const potentialMatches = allSchedules.filter(s => {
-        const dist = getDistanceInMeters(userLocation.lat, userLocation.lng, s.place.lat, s.place.lng);
-        return dist <= appliedFilters.distance && s.userId !== user?.id;
-    });
+    try {
+        const token = localStorage.getItem('token');
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+        
+        const response = await axios.get(`${API_URL}/api/schedules/random`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const randomSchedule = response.data;
 
-    if (potentialMatches.length === 0) {
-        alert('현재 조건에 맞는 랜덤 매칭 상대가 없습니다. 필터의 거리를 늘려보세요.');
-        return;
-    }
-
-    const randomSchedule = potentialMatches[Math.floor(Math.random() * potentialMatches.length)];
-
-    if (window.confirm(`[랜덤 매칭]\n\n'${randomSchedule.userName}'님의 '${randomSchedule.place.name}'(${randomSchedule.date}) 일정에 매칭을 신청하시겠습니까?`)) {
-        // TODO: 백엔드 연동 시 이 부분도 실제 매칭 신청 API를 호출하도록 변경됩니다.
-        alert(`'${randomSchedule.userName}'님에게 매칭 신청 알림을 보냈습니다.`);
+        if (window.confirm(`[랜덤 매칭]\n\n'${randomSchedule.user.name}'님의 '${randomSchedule.placeName}'(${randomSchedule.date}) 일정에 매칭을 신청하시겠습니까?`)) {
+            const matchResponse = await axios.post(
+                `${API_URL}/api/matches`,
+                { scheduleId: randomSchedule.id },
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+            alert(matchResponse.data);
+        }
+    } catch (error) {
+        if (error.response && error.response.status === 404) {
+            alert('현재 매칭 가능한 상대가 없습니다.');
+        } else if (error.response && error.response.data) {
+            alert(`매칭 신청 실패: ${error.response.data}`);
+        } else {
+            console.error("랜덤 매칭 실패:", error);
+            alert("랜덤 매칭 중 오류가 발생했습니다.");
+        }
     }
   };
 
   const schedulesForSelectedDate = useMemo(() => {
-    const targetSchedules = selectedDate ? schedules.filter(s => s.date === selectedDate) : schedules;
-    
-    if (!userLocation) return targetSchedules;
-    
-    const schedulesWithDistance = targetSchedules.map(s => ({
-        ...s,
-        distance: getDistanceInMeters(userLocation.lat, userLocation.lng, s.place.lat, s.place.lng)
-    }));
-
-    return schedulesWithDistance.sort((a, b) => a.distance - b.distance);
-  }, [selectedDate, schedules, userLocation]);
+    if (!selectedDate) {
+        return schedules;
+    }
+    return schedules.filter(s => s.date === selectedDate);
+  }, [selectedDate, schedules]);
 
   const renderContent = () => (
     <Container className="mt-4">
@@ -370,7 +419,13 @@ const MatchingPage = () => {
           <MatchingCalendar schedules={schedules} onDateSelect={setSelectedDate} selectedDate={selectedDate} />
         </Col>
         <Col lg={4} xs={12} className="mb-4">
-          <ScheduleList schedules={schedulesForSelectedDate} onScheduleSelect={setSelectedSchedule} selectedSchedule={selectedSchedule} selectedDate={selectedDate} />
+          <ScheduleList 
+            schedules={schedulesForSelectedDate} 
+            onScheduleSelect={setSelectedSchedule} 
+            selectedSchedule={selectedSchedule} 
+            selectedDate={selectedDate}
+            onViewProfile={handleViewProfile} 
+          />
         </Col>
       </Row>
     </Container>
@@ -408,9 +463,14 @@ const MatchingPage = () => {
         onApply={handleApplyFilter} 
         initialFilters={appliedFilters}
       />
+      
+      <ProfileModal 
+        isOpen={isProfileModalOpen}
+        toggle={() => setProfileModalOpen(false)}
+        schedule={viewingSchedule}
+      />
     </>
   );
 };
 
 export default MatchingPage;
-

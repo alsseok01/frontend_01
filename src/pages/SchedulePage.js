@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Container, Card, CardBody, CardHeader, Row, Col, ListGroup, ListGroupItem, Badge, Button } from 'reactstrap';
 import MapComponent from '../components/Map';
 import CalendarComponent from '../components/Calendar';
@@ -18,7 +18,6 @@ const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
   dist = dist * 60 * 1.1515 * 1.609344 * 1000;
   return dist;
 };
-
 
 const NearbyPlacesList = ({ places, userLocation, onPlaceClick }) => {
     const { isAuthenticated, onNavigate } = useAuth();
@@ -77,10 +76,10 @@ const NearbyPlacesList = ({ places, userLocation, onPlaceClick }) => {
 };
 
 const SchedulePage = () => {
-  // TODO: 백엔드 연동 시, 이 events 상태는 페이지가 로드될 때 useEffect를 사용하여
-  // 사용자의 일정 정보를 서버로부터 받아와서(fetch) 채워야 합니다.
+  // ✅ [수정] AuthContext에서 전역으로 관리되는 events와 setEvents를 가져옵니다.
   const { events, setEvents } = useAuth();
 
+  // 이 페이지에서 자체적으로 관리해야 할 상태들만 남겨둡니다.
   const [activeFoodFilters, setActiveFoodFilters] = useState({
       '한식': true, '중식': true, '일식': true, '양식': true, '분식': true, '카페': true,
   });
@@ -93,15 +92,10 @@ const SchedulePage = () => {
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [mobileView, setMobileView] = useState('map');
 
-  useEffect(() => {
-    // TODO: 백엔드 연동 시 여기에 API 호출 코드를 추가합니다.
-    // const fetchUserSchedules = async () => {
-    //   const response = await fetch('/api/schedules/me');
-    //   const data = await response.json();
-    //   setEvents(data); // 서버에서 받은 데이터로 상태 업데이트
-    // }
-    // fetchUserSchedules();
+  // ✅ [삭제] 이 페이지에서 직접 일정을 불러오던 useEffect는 삭제했습니다.
+  // 이 역할은 AuthContext가 대신합니다.
 
+  useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 992);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -116,9 +110,9 @@ const SchedulePage = () => {
 
   return (
     <>
+      {/* ... 이하 JSX 코드는 기존과 동일합니다 ... */}
       <div className="d-flex flex-column text-white text-center position-relative">
         {isDesktop ? (
-          // --- 데스크탑 레이아웃 ---
           <>
             <div className="flex-grow-1 d-flex align-items-start justify-content-center pt-0 mt-0">
               <Container>
@@ -167,7 +161,6 @@ const SchedulePage = () => {
             </Row>
           </>
         ) : (
-          // --- 모바일 레이아웃 ---
           <div className="flex-grow-1 d-flex flex-column justify-content-center align-items-center">
              <div className="fade-in-up-text" style={{ marginTop: "100px" }}>
                <Container>
@@ -216,4 +209,3 @@ const SchedulePage = () => {
 };
 
 export default SchedulePage;
-
