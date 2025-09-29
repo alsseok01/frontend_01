@@ -1,95 +1,112 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios'; // ✅ [수정] axios를 import 합니다.
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import axios from 'axios';
 
 const AuthContext = createContext(null);
-
-// ✅ [수정] 백엔드 API 기본 URL을 상수로 정의합니다.
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
-  const [currentPage, setCurrentPage] = useState('home'); 
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState('home');
   const [authSubPage, setAuthSubPage] = useState('login');
+  // ✅ [수정] 일정(events) 상태를 AuthContext에서 관리하도록 위치를 옮겼습니다.
+  const [events, setEvents] = useState({});
 
-    const [events, setEvents] = useState({});
+  // ✅ [추가] "내 일정"을 서버에서 불러오는 함수를 Context에 만들었습니다.
+  // 다른 페이지에서도 이 함수를 호출하여 데이터를 새로고침할 수 있습니다.
+  const fetchMySchedules = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
 
-  // ✅ [수정] 앱 로딩 시 토큰을 확인하고, 유효하면 사용자 정보를 가져오는 로직으로 변경
+      const response = await axios.get(`${API_URL}/api/schedules/my`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      const formattedEvents = response.data.reduce((acc, schedule) => {
+        const date = schedule.date;
+        if (!acc[date]) {
+          acc[date] = [];
+        }
+        acc[date].push({
+          id: schedule.id,
+          text: schedule.text,
+          time: schedule.time,
+          participants: schedule.participants,
+          currentParticipants: schedule.currentParticipants,
+          placeCategory: schedule.placeCategory
+        });
+        return acc;
+      }, {});
+      setEvents(formattedEvents); // 불러온 데이터를 전역 상태에 저장합니다.
+
+    } catch (error) {
+      console.error("내 일정을 불러오는데 실패했습니다:", error);
+      setEvents({}); // 에러가 발생하면 기존 일정을 비웁니다.
+    }
+  }, []);
+
+  // 앱이 처음 시작될 때 사용자 정보와 함께 "내 일정"도 불러오도록 수정합니다.
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      // Axios의 모든 요청에 기본적으로 토큰을 포함시킵니다.
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-      // 서버에 사용자 정보 요청 (토큰 유효성 검증)
       axios.get(`${API_URL}/api/user/me`)
         .then(response => {
           setUser(response.data);
           setIsAuthenticated(true);
-          setCurrentPage('home'); // 사용자 정보가 있으면 홈으로 이동
+          fetchMySchedules(); // ✅ 로그인 확인 후 일정 데이터를 불러옵니다.
         })
         .catch(() => {
-          // 토큰이 유효하지 않은 경우
           localStorage.removeItem('token');
-          delete axios.defaults.headers.common['Authorization'];
-        });
-    }
-  }, []);
-
-  const processLoginData = (data) => {
-    // ✅ [추가] 1. 서버로부터 받은 데이터 전체를 확인합니다.
-    console.log("서버로부터 받은 로그인 데이터:", data); 
-
-    const { accessToken, ...userData } = data;
-
-    // ✅ [추가] 2. 객체에서 accessToken이 제대로 추출되었는지 확인합니다.
-    console.log("추출된 토큰:", accessToken); 
-
-    // 토큰이 유효할 때만 저장합니다.
-    if (accessToken) {
-        localStorage.setItem('token', accessToken);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-        setUser(userData);
-        setIsAuthenticated(true);
+          setUser(null);
+          setIsAuthenticated(false);
+        })
+        .finally(() => setIsLoading(false));
     } else {
-        console.error("토큰이 없습니다! 서버 응답을 확인해주세요.");
+      setIsLoading(false);
     }
-};
-  // ✅ [수정] 이메일, 비밀번호로 백엔드에 로그인 요청을 보내는 비동기 함수로 변경
-  const login = async (email, password) => {
-    try {
-      console.log("서버로 보내는 이메일:", `'${email}'`);
-      const response = await axios.post(`${API_URL}/api/auth/login`, { email, password });
-      processLoginData(response.data);
-      setCurrentPage('home'); // 로그인 성공 후 홈으로 이동
-      alert('로그인 성공!');
-      
-    } catch (error) {
-      console.error('로그인 실패:', error);
-      alert('이메일 또는 비밀번호를 확인해주세요.');
-      // 에러를 다시 던져서 컴포넌트 레벨에서도 처리할 수 있게 함
-      throw error; 
+  }, [fetchMySchedules]);
+
+  const processLoginData = (loginData) => {
+    const { accessToken, ...userData } = loginData;
+    if (accessToken) {
+      localStorage.setItem('token', accessToken);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+      setUser(userData);
+      setIsAuthenticated(true);
+      fetchMySchedules(); // ✅ 로그인 성공 직후에도 일정 데이터를 불러옵니다.
+    } else {
+      console.error("서버 응답에 토큰이 없습니다.");
     }
   };
 
-  // ✅ [수정] 로그아웃 시 Axios 헤더 제거 및 로그인 페이지로 이동
+  const login = async (email, password) => {
+    const response = await axios.post(`${API_URL}/api/auth/login`, { email, password });
+    processLoginData(response.data);
+  };
+
+  const register = async (name, email, password) => {
+    const response = await axios.post(`${API_URL}/api/auth/register`, { name, email, password });
+    processLoginData(response.data);
+  };
+
+  // 로그아웃 시 사용자 정보뿐만 아니라 일정 데이터도 깨끗하게 비웁니다.
   const logout = () => {
     setIsAuthenticated(false);
     setUser(null);
+    setEvents({}); // ✅ [수정] 로그아웃 시 일정 데이터 초기화
     localStorage.removeItem('token');
-    delete axios.defaults.headers.common['Authorization']; // Axios 헤더에서 토큰 제거
-    onNavigate('login'); // 로그아웃 후 로그인 페이지로 이동
+    delete axios.defaults.headers.common['Authorization'];
+    onNavigate('home');
   };
 
-  const updateUserProfile = (updatedData) => {
-    setUser(prevUser => ({
-      ...prevUser, // 기존 사용자 정보 유지
-      ...updatedData // 새로운 정보로 덮어쓰기
-    }));
+  const updateUser = (newUserData) => {
+    setUser(newUserData);
   };
 
   const onNavigate = (page) => {
-    console.log(`!!! 2. onNavigate 호출됨, page: ${page} !!!`);
     if (['login', 'register', 'forgotPassword'].includes(page)) {
       setAuthSubPage(page);
       setCurrentPage('auth');
@@ -98,13 +115,24 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-const value = { 
-    isAuthenticated, user, setUser, 
-    login, logout, 
-    currentPage, onNavigate, authSubPage, 
-    processLoginData, updateUserProfile,
-    events, setEvents // 추가된 부분
-  };  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  // ✅ 다른 페이지나 컴포넌트에서 사용할 수 있도록 events, setEvents, fetchMySchedules를 value에 추가합니다.
+  const value = {
+    isAuthenticated,
+    user,
+    isLoading,
+    login,
+    register,
+    logout,
+    onNavigate,
+    currentPage,
+    authSubPage,
+    updateUser,
+    events,
+    setEvents,
+    fetchMySchedules,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

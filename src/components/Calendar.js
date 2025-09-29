@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter, Input, Badge, ListGroup, Card, CardBody, CardHeader, ListGroupItem } from 'reactstrap';
 import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 
 const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setScheduleModalData, selectedTime }) => {
-  const { isAuthenticated, onNavigate } = useAuth();
+  // ✅ [수정] AuthContext에서 "내 일정 다시 불러오기" 함수를 가져옵니다.
+  const { isAuthenticated, onNavigate, fetchMySchedules } = useAuth();
 
+  // --- 기존의 모든 상태와 UI 로직은 그대로 유지됩니다 ---
   const [currentDate, setCurrentDate] = useState(new Date());
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -74,61 +77,52 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
     }
   };
 
-  const addEvent = () => {
-    if (!isAuthenticated) {
-      alert("로그인 후 이용해주세요");
-      if (onNavigate) onNavigate("login");
-      return;
-    }
-    if (newEventText.trim() === '') return;
-    if (!selectedDate) return;
-
-    const category = pendingEvent ? pendingEvent.category : '기타';
-    const color = categoryColors[category] || categoryColors['기타'];
-
-    const newEvent = { 
-      id: Date.now(), 
-      text: newEventText, 
-      color: color,
-      participants: numberOfParticipants, // 인원수 정보 추가
-      currentParticipants: 1
-    };
-    
-    // TODO: 백엔드 연동 시, 아래 setEvents를 호출하기 전에
-    // 서버에 이 newEvent 정보를 저장하는 API를 호출해야 합니다.
-    // (POST /api/schedules)
-    // 서버는 저장 후 생성된 실제 ID를 포함한 완전한 이벤트 객체를 반환해야 하며,
-    // 그 객체를 사용하여 setEvents를 호출하는 것이 좋습니다.
-    // 예: const response = await fetch('/api/schedules', {
-    //       method: 'POST',
-    //       body: JSON.stringify(newEvent),
-    //       headers: { 'Content-Type': 'application/json' }
-    //     });
-    //     const savedEvent = await response.json();
-    
-    setEvents(prev => {
-        const existingEvents = prev[selectedDate] || [];
-        // 예시: return { ...prev, [selectedDate]: [...existingEvents, savedEvent] };
-        return {
-            ...prev,
-            [selectedDate]: [...existingEvents, newEvent]
+  const addEvent = async () => {
+    if (!isAuthenticated || newEventText.trim() === '' || !selectedDate) return;
+    try {
+        const token = localStorage.getItem('token');
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+        const newScheduleData = {
+            date: selectedDate,
+            time: selectedTime,
+            text: newEventText,
+            placeName: newEventText.split('에서')[0],
+            placeCategory: pendingEvent ? pendingEvent.category : '기타',
+            participants: numberOfParticipants
         };
-    });
-    
-    setAddModalOpen(false);
-    setPendingEvent(null);
+        
+        // 1. 서버에 생성 요청을 보내고, 생성된 일정 정보를 응답으로 받습니다.
+        const response = await axios.post(`${API_URL}/api/schedules`, newScheduleData, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const savedSchedule = response.data; // 서버가 반환한 새 일정
+
+        // 2. 전체 목록을 다시 불러오는 대신, 받은 새 일정만 기존 상태에 추가합니다.
+        setEvents(prevEvents => {
+            const dateEvents = prevEvents[savedSchedule.date] || [];
+            return {
+                ...prevEvents,
+                [savedSchedule.date]: [...dateEvents, savedSchedule]
+            };
+        });
+
+        setAddModalOpen(false);
+        setPendingEvent(null);
+        setNewEventText('');
+    } catch (error) {
+        console.error("일정 추가 실패:", error);
+        alert("일정 추가에 실패했습니다.");
+    }
   };
 
+  // --- 수정 및 삭제 기능은 기존 로직을 그대로 유지합니다 ---
   const editEvent = () => {
     if (!isAuthenticated) { return; }
     if (editedEventText.trim() === '') return;
     if (!selectedDate || !events[selectedDate]) return;
 
-    // TODO: 백엔드 연동 시, 서버에 이 수정 사항을 저장하는 API를 호출해야 합니다.
-    // (PUT 또는 PATCH /api/schedules/{selectedEvent.id})
     const updatedEvents = events[selectedDate].map(event => {
       if (event.id === selectedEvent.id) {
-        // ✅ 2. 총 모집 인원을 수정할 때, 현재 참여 인원보다 적게 설정할 수 없도록 방어 코드를 추가합니다.
         const currentP = event.currentParticipants || 1;
         const newTotalP = Math.max(currentP, editedParticipants);
 
@@ -152,15 +146,29 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
     setEditModalOpen(true);
   };
 
-  const deleteEvent = () => {
-    if (!isAuthenticated) { return; }
-    if (!selectedDate || !events[selectedDate]) return;
-    
-    // TODO: 백엔드 연동 시, 서버에 이 이벤트를 삭제하는 API를 호출해야 합니다.
-    // (DELETE /api/schedules/{selectedEvent.id})
-    const filteredEvents = events[selectedDate].filter(event => event.id !== selectedEvent.id);
-    setEvents(prev => ({ ...(prev || {}), [selectedDate]: filteredEvents }));
-    setEditModalOpen(false);
+  const deleteEvent = async () => {
+    if (!isAuthenticated || !selectedEvent) return;
+
+    // 사용자에게 다시 한번 확인
+    if (window.confirm("정말로 이 일정을 삭제하시겠습니까?")) {
+        try {
+            const token = localStorage.getItem('token');
+            const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+            
+            // DELETE 요청을 보내 DB에서 일정을 삭제합니다.
+            await axios.delete(`${API_URL}/api/schedules/${selectedEvent.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            alert("일정이 삭제되었습니다.");
+            setEditModalOpen(false); // 수정/삭제 모달을 닫습니다.
+            await fetchMySchedules(); // 삭제 후, 최신 일정 목록을 서버에서 다시 불러와 화면을 갱신합니다.
+
+        } catch (error) {
+            console.error("일정 삭제 실패:", error);
+            alert("일정 삭제에 실패했습니다. 본인이 만든 일정만 삭제할 수 있습니다.");
+        }
+    }
   };
 
   const renderCalendar = () => {
@@ -242,11 +250,10 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
         <ModalBody>
           <Input type="text" value={newEventText} onChange={(e) => setNewEventText(e.target.value)} placeholder="일정 내용 입력" />
           
-          {/* ✅ 3. 인원수 선택 UI를 추가합니다. */}
           <div className="d-flex align-items-center justify-content-center mt-3">
             <Button 
               color="secondary" 
-              onClick={() => setNumberOfParticipants(p => Math.max(2, p - 1))} // 최소 2명
+              onClick={() => setNumberOfParticipants(p => Math.max(2, p - 1))}
             >
               -
             </Button>
@@ -255,7 +262,7 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
             </strong>
             <Button 
               color="secondary" 
-              onClick={() => setNumberOfParticipants(p => Math.min(8, p + 1))} // 최대 8명
+              onClick={() => setNumberOfParticipants(p => Math.min(8, p + 1))}
             >
               +
             </Button>
@@ -274,7 +281,6 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
         <ModalBody>
           <Input type="text" value={editedEventText} onChange={(e) => setEditedEventText(e.target.value)} />
 
-          {/* ✅ 4. '일정 추가' 때와 동일한 인원수 선택 UI를 추가합니다. */}
           <div className="d-flex align-items-center justify-content-center mt-3">
             <Button 
               color="secondary" 
@@ -312,7 +318,6 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
                   <Badge style={{ backgroundColor: event.color, marginRight: '10px' }}>&nbsp;</Badge>
                   {event.text}
                 </div>
-                {/* 인원수를 뱃지로 표시 */}
                 <Badge color="dark" pill>{`${event.currentParticipants || 1} / ${event.participants} 명`}</Badge>
               </ListGroupItem>
             ))}
@@ -324,4 +329,3 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
 };
 
 export default CalendarComponent;
-
