@@ -28,7 +28,8 @@ function App() {
     }
 
     if (isAuthenticated) {
-      if (user && user.isNewUser) {
+      const isNew = user && (user.isNewUser || user.newUser);
+      if (isNew) {
         return <ProfileSetupPage />;
       }
       
