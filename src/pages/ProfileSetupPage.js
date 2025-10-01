@@ -81,17 +81,17 @@ const ProfileSetupPage = ({ animationClass }) => {
       const token = localStorage.getItem('token');
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
       
-      // 1. 백엔드에 프로필 정보 업데이트 요청
-      const response = await axios.put(`${API_URL}/api/user/profile`, formData, {
+      const payload = {
+      ...formData,
+      age: formData.age ? parseInt(formData.age, 10) : null,
+    };
+      
+      const response = await axios.put(`${API_URL}/api/user/profile`, payload, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      // 2. 요청 성공 시, 서버로부터 받은 최신 사용자 정보(isNewUser: false 포함)로 AuthContext 상태 업데이트
       updateUser(response.data);
-      
       alert("설정이 완료되었습니다! 이제 밥상친구를 시작해보세요.");
-      // updateUser가 호출되면 App.js가 자동으로 HomePage로 화면을 전환해줍니다.
-
     } catch (error) {
       console.error("프로필 설정 실패:", error);
       alert("프로필 저장에 실패했습니다. 다시 시도해주세요.");

@@ -24,7 +24,8 @@ export const AuthProvider = ({ children }) => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      const formattedEvents = response.data.reduce((acc, schedule) => {
+      const scheduleList = response.data.schedules || [];
+      const formattedEvents = scheduleList.reduce((acc, schedule) => {
         const date = schedule.date;
         if (!acc[date]) {
           acc[date] = [];
@@ -82,14 +83,32 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  axios.defaults.withCredentials = true;
+
   const login = async (email, password) => {
-    const response = await axios.post(`${API_URL}/api/auth/login`, { email, password });
+    try {
+    const response = await axios.post(`${API_URL}/api/auth/login`, { email, password }, { withCredentials: true });
     processLoginData(response.data);
+  } catch (error) {
+    const msg =
+      error.response?.data?.message ||
+      error.response?.data ||
+      '로그인 중 오류가 발생했습니다.';
+    alert(msg);
+  }
   };
 
   const register = async (name, email, password) => {
-    const response = await axios.post(`${API_URL}/api/auth/register`, { name, email, password });
-    processLoginData(response.data);
+    try {
+      const response = await axios.post(`${API_URL}/api/auth/register`, { name, email, password });
+      processLoginData(response.data);
+    } catch (error) {
+      const msg =
+        error.response?.data?.message ||
+        error.response?.data ||
+        '회원가입 중 오류가 발생했습니다.';
+      alert(msg);
+    }
   };
 
   // 로그아웃 시 사용자 정보뿐만 아니라 일정 데이터도 깨끗하게 비웁니다.
