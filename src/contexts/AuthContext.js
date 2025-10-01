@@ -57,7 +57,8 @@ export const AuthProvider = ({ children }) => {
         .then(response => {
           setUser(response.data);
           setIsAuthenticated(true);
-          fetchMySchedules(); // ✅ 로그인 확인 후 일정 데이터를 불러옵니다.
+          fetchMySchedules(); 
+          
         })
         .catch(() => {
           localStorage.removeItem('token');
@@ -102,6 +103,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.post(`${API_URL}/api/auth/register`, { name, email, password });
       processLoginData(response.data);
+      onNavigate('profileSetup'); // 회원가입 후 프로필 설정 페이지로 이동
     } catch (error) {
       const msg =
         error.response?.data?.message ||
