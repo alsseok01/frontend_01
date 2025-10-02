@@ -285,6 +285,26 @@ const MatchingPage = () => {
             });
             setSchedules(response.data);
             setOriginalSchedules(response.data);
+
+            const allSchedules = response.data;
+
+            // 현재 날짜와 3주 후 날짜 계산
+            const today = new Date();
+            const limitDate = new Date();
+            limitDate.setDate(today.getDate() + 21);
+
+            // 오늘부터 3주 후까지의 일정만 필터링
+            const filtered = allSchedules.filter((s) => {
+                const dateObj = new Date(s.date);
+                // new Date(today.toDateString())로 오늘 자정 기준 비교
+                return (
+                dateObj >= new Date(today.toDateString()) && dateObj <= limitDate
+                );
+            });
+
+            setSchedules(filtered);
+            setOriginalSchedules(filtered);
+
         } catch (error) {
             console.error("매칭 일정을 불러오는데 실패했습니다:", error);
             setSchedules([]);

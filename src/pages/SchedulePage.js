@@ -5,6 +5,8 @@ import CalendarComponent from '../components/Calendar';
 import '../css/HomePage.css';
 import { useAuth } from '../contexts/AuthContext';
 
+
+
 const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
   if ((lat1 === lat2) && (lon1 === lon2)) return 0;
   const radlat1 = Math.PI * lat1 / 180;
@@ -77,7 +79,7 @@ const NearbyPlacesList = ({ places, userLocation, onPlaceClick }) => {
 
 const SchedulePage = () => {
   // ✅ [수정] AuthContext에서 전역으로 관리되는 events와 setEvents를 가져옵니다.
-  const { events, setEvents } = useAuth();
+  const { events, fetchMySchedules, setEvents } = useAuth();
 
   // 이 페이지에서 자체적으로 관리해야 할 상태들만 남겨둡니다.
   const [activeFoodFilters, setActiveFoodFilters] = useState({
@@ -92,10 +94,8 @@ const SchedulePage = () => {
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [mobileView, setMobileView] = useState('map');
 
-  // ✅ [삭제] 이 페이지에서 직접 일정을 불러오던 useEffect는 삭제했습니다.
-  // 이 역할은 AuthContext가 대신합니다.
-
   useEffect(() => {
+    
     const handleResize = () => setIsDesktop(window.innerWidth >= 992);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);

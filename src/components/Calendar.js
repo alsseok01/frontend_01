@@ -170,7 +170,7 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
         }
     }
   };
-
+  
   const renderCalendar = () => {
     const calendarDays = [];
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -192,6 +192,9 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
       const isFutureLimit = date > limitDate;
       const isDisabled = isPast || isFutureLimit;
 
+      const mySchedules = events[dateStr] || [];
+      const isSelected  = dateStr === selectedDate;
+
       calendarDays.push(
         <div 
           key={day} 
@@ -203,7 +206,7 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
           }}
           onClick={() => !isDisabled && handleDayClick(day)}
         >
-          <strong style={{ color: isDisabled ? '#6c757d' : '#000' }}>{day}</strong>
+          <strong style={{ color: isDisabled ? '#706c7dff' : '#000' }}>{day}</strong>
           <div className="d-flex flex-wrap mt-1">
             {dayEvents.map((event) => (
                 <Badge 
@@ -224,7 +227,7 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
     }
     return calendarDays;
   };
-
+  
   const changeMonth = (offset) => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + offset, 1));
   };
