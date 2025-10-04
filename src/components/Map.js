@@ -243,10 +243,10 @@ const MapComponent = ({ setScheduleModalData, activeFoodFilters, setActiveFoodFi
           <div className="mb-3">
             <strong>거리</strong>
             <div className="d-flex flex-wrap mt-2">
-              <Button outline={pendingDistance !== 300} color="secondary" size="sm" className="m-1" onClick={() => handleDistanceClick(300)} disabled={!userLocationRef.current}>300m</Button>
-              <Button outline={pendingDistance !== 500} color="secondary" size="sm" className="m-1" onClick={() => handleDistanceClick(500)} disabled={!userLocationRef.current}>500m</Button>
-              <Button outline={pendingDistance !== 1000} color="secondary" size="sm" className="m-1" onClick={() => handleDistanceClick(1000)} disabled={!userLocationRef.current}>1km</Button>
-              <Button outline={pendingDistance !== 2000} color="secondary" size="sm" className="m-1" onClick={() => handleDistanceClick(2000)} disabled={!userLocationRef.current}>2km</Button>
+              <Button outline={pendingDistance !== 300} color="secondary" size="sm" className="m-1" onClick={() => handleDistanceClick(300)} >300m</Button>
+              <Button outline={pendingDistance !== 500} color="secondary" size="sm" className="m-1" onClick={() => handleDistanceClick(500)} >500m</Button>
+              <Button outline={pendingDistance !== 1000} color="secondary" size="sm" className="m-1" onClick={() => handleDistanceClick(1000)} >1km</Button>
+              <Button outline={pendingDistance !== 2000} color="secondary" size="sm" className="m-1" onClick={() => handleDistanceClick(2000)} >2km</Button>
             </div>
           </div>
           <div className="mb-3">

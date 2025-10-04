@@ -24,29 +24,36 @@ export const AuthProvider = ({ children }) => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      const scheduleList = response.data.schedules || [];
-      const formattedEvents = scheduleList.reduce((acc, schedule) => {
-        const date = schedule.date;
-        if (!acc[date]) {
-          acc[date] = [];
-        }
-        acc[date].push({
-          id: schedule.id,
-          text: schedule.text,
-          time: schedule.time,
-          participants: schedule.participants,
-          currentParticipants: schedule.currentParticipants,
-          placeCategory: schedule.placeCategory
-        });
-        return acc;
-      }, {});
-      setEvents(formattedEvents); // 불러온 데이터를 전역 상태에 저장합니다.
-
-    } catch (error) {
-      console.error("내 일정을 불러오는데 실패했습니다:", error);
-      setEvents({}); // 에러가 발생하면 기존 일정을 비웁니다.
+      let scheduleList;
+    if (Array.isArray(response.data)) {
+      scheduleList = response.data;
+    } else if (response.data && Array.isArray(response.data.schedules)) {
+      scheduleList = response.data.schedules;
+    } else {
+      scheduleList = [];
     }
-  }, []);
+
+    // 날짜별로 그룹핑
+    const formattedEvents = scheduleList.reduce((acc, schedule) => {
+      const date = schedule.date;
+      if (!acc[date]) acc[date] = [];
+      acc[date].push({
+        id: schedule.id,
+        text: schedule.text,
+        time: schedule.time,
+        participants: schedule.participants,
+        currentParticipants: schedule.currentParticipants,
+        placeCategory: schedule.placeCategory,
+      });
+      return acc;
+    }, {});
+
+    setEvents(formattedEvents);
+  } catch (error) {
+    console.error('내 일정을 불러오는데 실패했습니다:', error);
+    setEvents({});
+  }
+}, []);
 
   // 앱이 처음 시작될 때 사용자 정보와 함께 "내 일정"도 불러오도록 수정합니다.
   useEffect(() => {
