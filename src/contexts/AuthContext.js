@@ -143,6 +143,44 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // AuthContext.js 내
+const [matchRequests, setMatchRequests] = useState([]);
+
+const fetchMatchRequests = useCallback(async () => {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  try {
+    const response = await axios.get(`${API_URL}/api/matches`, { headers: { Authorization: `Bearer ${token}` } });
+    setMatchRequests(response.data);
+  } catch (err) {
+    console.error('매칭 요청 목록을 불러오지 못했습니다.', err);
+    setMatchRequests([]);
+  }
+}, []);
+
+const acceptMatch = async (matchId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.post(`${API_URL}/api/matches/${matchId}/accept`, {}, { headers: { Authorization: `Bearer ${token}` } });
+    alert(response.data);
+    fetchMatchRequests();
+    fetchMySchedules(); // 내 일정의 현재 참여 인원도 갱신
+  } catch (error) {
+    alert(error.response?.data || '매칭 수락 중 오류가 발생했습니다.');
+  }
+};
+
+const rejectMatch = async (matchId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.post(`${API_URL}/api/matches/${matchId}/reject`, {}, { headers: { Authorization: `Bearer ${token}` } });
+    alert(response.data);
+    fetchMatchRequests();
+  } catch (error) {
+    alert(error.response?.data || '매칭 거절 중 오류가 발생했습니다.');
+  }
+};
+
   // ✅ 다른 페이지나 컴포넌트에서 사용할 수 있도록 events, setEvents, fetchMySchedules를 value에 추가합니다.
   const value = {
     isAuthenticated,
@@ -158,6 +196,10 @@ export const AuthProvider = ({ children }) => {
     events,
     setEvents,
     fetchMySchedules,
+    matchRequests,
+    fetchMatchRequests,
+    acceptMatch,
+    rejectMatch,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
