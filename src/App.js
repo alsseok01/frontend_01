@@ -14,6 +14,8 @@ import { useAuth } from './contexts/AuthContext';
 function App() {
   const { currentPage, authSubPage, isAuthenticated, onNavigate, isLoading, user } = useAuth();
 
+  
+
   if (isLoading) {
     return (
       <div className="vh-100 d-flex justify-content-center align-items-center">
