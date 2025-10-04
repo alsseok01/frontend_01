@@ -78,8 +78,11 @@ const NearbyPlacesList = ({ places, userLocation, onPlaceClick }) => {
 };
 
 const SchedulePage = () => {
-  // ✅ [수정] AuthContext에서 전역으로 관리되는 events와 setEvents를 가져옵니다.
   const { events, fetchMySchedules, setEvents } = useAuth();
+
+  useEffect(() => {
+    fetchMySchedules();    // ✅ 페이지가 로드될 때 내 일정 목록을 불러옴
+  }, [fetchMySchedules]);
 
   // 이 페이지에서 자체적으로 관리해야 할 상태들만 남겨둡니다.
   const [activeFoodFilters, setActiveFoodFilters] = useState({
@@ -95,11 +98,14 @@ const SchedulePage = () => {
   const [mobileView, setMobileView] = useState('map');
 
   useEffect(() => {
-    
     const handleResize = () => setIsDesktop(window.innerWidth >= 992);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+   useEffect(() => {
+    fetchMySchedules();
+  }, [fetchMySchedules]);
 
   const handleMapPinClick = useCallback((data) => {
     setScheduleModalData(data);

@@ -209,15 +209,21 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
           <strong style={{ color: isDisabled ? '#706c7dff' : '#000' }}>{day}</strong>
           <div className="d-flex flex-wrap mt-1">
             {dayEvents.map((event) => (
-                <Badge 
-                  key={event.id} 
-                  style={{ backgroundColor: event.color, marginRight: '4px', marginBottom: '4px', cursor: 'pointer' }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!isDisabled) handleEventClick(event, dateStr);
-                  }}
-                >
-                  {`${event.currentParticipants || 1}/${event.participants}`}
+                <Badge
+                    key={event.id}
+                    style={{
+                      backgroundColor:
+                        categoryColors[event.placeCategory] || categoryColors['기타'],
+                      marginRight: '4px',
+                      marginBottom: '4px',
+                      cursor: 'pointer',
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!isDisabled) handleEventClick(event, dateStr);
+                    }}
+                  >
+                    {`${event.currentParticipants || 1}/${event.participants}`}
                 </Badge>
               )
             )}
