@@ -58,7 +58,12 @@ const AppLayout = ({ children }) => { // onLogout prop은 이제 Context에서 �
               >
                 사용자 정보
               </div>
-              <div className="custom-dropdown-item">활동</div>
+              <div className="custom-dropdown-item"
+                onClick={() => {
+                  onNavigate('match-requests');
+                  setProfileMenuOpen(false);
+                }}
+              >활동</div>
               <hr style={{ margin: '5px 0' }} />
               <div 
                 className="custom-dropdown-item"
@@ -93,7 +98,7 @@ const AppLayout = ({ children }) => { // onLogout prop은 이제 Context에서 �
             <NavItem><NavLink href="#" onClick={() => onNavigate('matching')} className="font-weight-bold">매칭하기</NavLink></NavItem>
             <NavItem><NavLink href="#" onClick={() => onNavigate('schedule')} className="font-weight-bold">일정 만들기</NavLink></NavItem>
             <NavItem><NavLink href="#" onClick={() => onNavigate('board')} className="font-weight-bold">게시판</NavLink></NavItem>
-            <NavItem><NavLink href="#" onClick={() => onNavigate('reviews')} className="font-weight-bold">후기</NavLink></NavItem>
+            {/* <NavItem><NavLink href="#" onClick={() => onNavigate('reviews')} className="font-weight-bold">후기</NavLink></NavItem> */}
           </Nav>
           {renderNavButtons()}
         </Container>
@@ -126,7 +131,7 @@ const AppLayout = ({ children }) => { // onLogout prop은 이제 Context에서 �
                 <NavItem><NavLink href="#" onClick={() => handleMenuClick('matching')} className="offcanvas-nav-link">🤝 매칭하기</NavLink></NavItem>
                 <NavItem><NavLink href="#" onClick={() => handleMenuClick('schedule')} className="offcanvas-nav-link">📅 일정 만들기</NavLink></NavItem>
                 <NavItem><NavLink href="#" onClick={() => handleMenuClick('board')} className="offcanvas-nav-link">📋 게시판</NavLink></NavItem>
-                <NavItem><NavLink href="#" onClick={() => handleMenuClick('reviews')} className="offcanvas-nav-link">⭐ 후기</NavLink></NavItem>
+                {/* <NavItem><NavLink href="#" onClick={() => handleMenuClick('reviews')} className="offcanvas-nav-link">⭐ 후기</NavLink></NavItem> */}
             </Nav>
         </OffcanvasBody>
       </Offcanvas>

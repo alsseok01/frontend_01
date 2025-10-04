@@ -9,6 +9,7 @@ import BoardPage from './pages/BoardPage';
 import ReviewsPage from './pages/ReviewsPage';
 import ProfileSetupPage from './pages/ProfileSetupPage';
 import SchedulePage from './pages/SchedulePage';
+import MatchRequestsPage from './pages/MatchRequestsPage';
 import { useAuth } from './contexts/AuthContext';
 
 function App() {
@@ -42,6 +43,7 @@ function App() {
         case 'matching': return <MatchingPage />;
         case 'board': return <BoardPage />;
         case 'reviews': return <ReviewsPage />;
+        case 'match-requests': return <MatchRequestsPage />;
         default: return <HomePage />;
       }
     } 
