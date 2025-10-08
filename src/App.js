@@ -43,6 +43,7 @@ function App() {
         case 'matching': return <MatchingPage />;
         case 'board': return <BoardPage />;
         case 'reviews': return <ReviewsPage />;
+        case 'profileSetup': return <ProfileSetupPage />;
         case 'match-requests': return <MatchRequestsPage />;
         default: return <HomePage />;
       }

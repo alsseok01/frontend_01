@@ -85,6 +85,8 @@ const ProfileSetupPage = ({ animationClass }) => {
       ...formData,
       age: formData.age ? parseInt(formData.age, 10) : null,
     };
+
+    delete payload.gender;
       
       const response = await axios.put(`${API_URL}/api/user/profile`, payload, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -92,6 +94,7 @@ const ProfileSetupPage = ({ animationClass }) => {
 
       updateUser(response.data);
       alert("설정이 완료되었습니다! 이제 밥상친구를 시작해보세요.");
+      window.location.href = 'home';
     } catch (error) {
       console.error("프로필 설정 실패:", error);
       alert("프로필 저장에 실패했습니다. 다시 시도해주세요.");
