@@ -12,9 +12,22 @@ export const AuthProvider = ({ children }) => {
   const [authSubPage, setAuthSubPage] = useState('login');
   // ✅ [수정] 일정(events) 상태를 AuthContext에서 관리하도록 위치를 옮겼습니다.
   const [events, setEvents] = useState({});
-
+  const [sentMatchRequests, setSentMatchRequests] = useState([]);
   // ✅ [추가] "내 일정"을 서버에서 불러오는 함수를 Context에 만들었습니다.
   // 다른 페이지에서도 이 함수를 호출하여 데이터를 새로고침할 수 있습니다.
+
+  const fetchSentMatchRequests = useCallback(async () => {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  try {
+    const response = await axios.get(`${API_URL}/api/matches/sent`, { headers: { Authorization: `Bearer ${token}` } });
+    setSentMatchRequests(response.data);
+  } catch (err) {
+    console.error('내가 보낸 매칭 요청 목록을 불러오지 못했습니다.', err);
+    setSentMatchRequests([]);
+  }
+}, []);
+
   const fetchMySchedules = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -200,6 +213,8 @@ const rejectMatch = async (matchId) => {
     fetchMatchRequests,
     acceptMatch,
     rejectMatch,
+    sentMatchRequests,
+    fetchSentMatchRequests,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
