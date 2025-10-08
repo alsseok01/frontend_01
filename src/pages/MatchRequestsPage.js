@@ -1,13 +1,15 @@
 import React, { useEffect } from 'react';
-import { Button, Card, CardBody, CardHeader, ListGroup, ListGroupItem } from 'reactstrap';
+import { Button, Card, CardBody, CardHeader, ListGroup, ListGroupItem, Badge } from 'reactstrap';
 import { useAuth } from '../contexts/AuthContext';
 
 const MatchRequestsPage = () => {
-  const { matchRequests, fetchMatchRequests, acceptMatch, rejectMatch } = useAuth();
+  const { matchRequests, fetchMatchRequests, acceptMatch, rejectMatch,
+        sentMatchRequests, fetchSentMatchRequests } = useAuth();
 
   useEffect(() => {
-    fetchMatchRequests();
-  }, [fetchMatchRequests]);
+  fetchMatchRequests();
+  fetchSentMatchRequests();
+}, [fetchMatchRequests, fetchSentMatchRequests]);
 
   return (
     <Card className="mt-4">
@@ -40,6 +42,27 @@ const MatchRequestsPage = () => {
           )}
         </ListGroup>
       </CardBody>
+
+          <CardHeader><h4>내가 보낸 신청</h4></CardHeader>
+  <CardBody>
+    <ListGroup flush>
+      {sentMatchRequests.length > 0 ? (
+        sentMatchRequests.map(m => (
+          <ListGroupItem key={m.id}>
+            <div>
+              <strong>{m.schedule?.member?.name ?? '알 수 없음'}</strong> 님의&nbsp;
+              {m.schedule?.date ?? ''} {m.schedule?.time ?? ''}시&nbsp;
+              <strong>{m.schedule?.placeName ?? ''}</strong> 일정에 신청했습니다.
+              <Badge color="secondary" className="ms-2">{m.status}</Badge>
+            </div>
+          </ListGroupItem>
+        ))
+      ) : (
+        <p className="text-muted">보낸 신청이 없습니다.</p>
+      )}
+    </ListGroup>
+  </CardBody>
+
     </Card>
   );
 };
