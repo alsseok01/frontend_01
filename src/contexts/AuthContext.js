@@ -170,13 +170,27 @@ const fetchSentMatchRequests = useCallback(async () => {
   }
 }, []);
 
+const deleteSentMatch = async (matchId) => {
+  try {
+    const token = localStorage.getItem('token');
+    await axios.delete(`${API_URL}/api/matches/${matchId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    fetchSentMatchRequests(); // 삭제 후 목록 갱신
+  } catch (err) {
+    alert(err.response?.data || '매칭 삭제 중 오류가 발생했습니다.');
+  }
+};
+
 const acceptMatch = async (matchId) => {
   try {
     const token = localStorage.getItem('token');
     const response = await axios.post(`${API_URL}/api/matches/${matchId}/accept`, {}, { headers: { Authorization: `Bearer ${token}` } });
     alert(response.data);
-    fetchMatchRequests();
-    fetchMySchedules(); // 내 일정의 현재 참여 인원도 갱신
+    fetchMatchRequests();     // 받은 매칭 신청 갱신
+    fetchSentMatchRequests(); // 내가 보낸 신청도 갱신
+    fetchMySchedules();       // 일정의 currentParticipants 갱신
+    
   } catch (error) {
     alert(error.response?.data || '매칭 수락 중 오류가 발생했습니다.');
   }
@@ -214,6 +228,7 @@ const rejectMatch = async (matchId) => {
     rejectMatch,
     sentMatchRequests,
     fetchSentMatchRequests,
+    deleteSentMatch
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -10,6 +10,7 @@ import ReviewsPage from './pages/ReviewsPage';
 import ProfileSetupPage from './pages/ProfileSetupPage';
 import SchedulePage from './pages/SchedulePage';
 import MatchRequestsPage from './pages/MatchRequestsPage';
+import ChatPage from './pages/ChatPage';
 import { useAuth } from './contexts/AuthContext';
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
         case 'reviews': return <ReviewsPage />;
         case 'profileSetup': return <ProfileSetupPage />;
         case 'match-requests': return <MatchRequestsPage />;
+        case 'chat': return <ChatPage />;
         default: return <HomePage />;
       }
     } 
