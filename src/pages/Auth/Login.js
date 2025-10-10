@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button, Card, CardBody, FormGroup, Form, Input, InputGroup, InputGroupText, Container, Row, Col } from 'reactstrap';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage = ({ onSwitchMode }) => { 
   const { login } = useAuth(); // AuthContext에서 login 함수를 직접 가져옵니다.
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+ const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -15,6 +17,7 @@ const LoginPage = ({ onSwitchMode }) => {
     }
     try {
       await login(email, password); // AuthContext의 login 함수에 email, password 전달
+      navigate('/'); // 로그인 성공 시 홈으로 이동
     } catch (error) {
       // 로그인 실패 시 AuthContext에서 던진 에러를 처리할 수 있습니다.
     }

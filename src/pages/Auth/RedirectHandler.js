@@ -1,29 +1,49 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { Container, Spinner } from 'reactstrap';
 
-const OAuth2RedirectHandler = ({ onLogin }) => {
-  useEffect(() => {
-    // URL에서 'token'이라는 이름의 파라미터를 찾습니다.
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+const RedirectHandler = () => {
+  const { socialLogin } = useAuth();
+  const navigate = useNavigate();
 
-    if (token) {
-      // 토큰이 있으면, 브라우저 저장소(localStorage)에 저장합니다.
-      localStorage.setItem('token', token);
-      
-      // App.js에 있는 onLogin 함수를 호출하여 로그인 상태로 만들고 메인 페이지로 이동합니다.
-      onLogin();
-    } else {
-      // 토큰이 없으면 로그인 실패로 간주하고, 알림 후 로그인 페이지로 이동합니다.
-      alert('소셜 로그인에 실패했습니다. 다시 시도해주세요.');
-      window.location.href = '/'; 
+  const handleSocialLogin = useCallback(async () => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const error = params.get('error');
+
+    if (error) {
+      console.error("소셜 로그인 에러:", error);
+      alert("로그인에 실패했습니다.");
+      navigate('/auth'); // 에러 발생 시 로그인 페이지로 이동
+      return;
     }
-  }, [onLogin]);
+    
+    if (token) {
+      try {
+        await socialLogin(token);
+        navigate('/');
+      } catch (e) {
+        console.error("토큰 처리 중 에러:", e);
+        alert("로그인 처리 중 오류가 발생했습니다.");
+        navigate('/auth');
+      }
+    } else {
+        // 토큰이 없는 경우 (비정상적인 접근)
+        navigate('/auth');
+    }
+  }, [socialLogin, navigate]);
+
+  useEffect(() => {
+    handleSocialLogin();
+  }, [handleSocialLogin]);
 
   return (
-    <div className="vh-100 d-flex justify-content-center align-items-center">
-      <p>로그인 처리 중입니다. 잠시만 기다려주세요...</p>
-    </div>
+    <Container className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
+      <Spinner color="primary" />
+      <h4 className="ms-3">로그인 처리 중...</h4>
+    </Container>
   );
 };
 
-export default OAuth2RedirectHandler;
+export default RedirectHandler;
