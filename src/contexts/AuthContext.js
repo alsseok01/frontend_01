@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, response } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext(null);
@@ -143,6 +143,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+
+
   // AuthContext.js 내
 const [matchRequests, setMatchRequests] = useState([]);
 
@@ -201,7 +203,8 @@ const rejectMatch = async (matchId) => {
     const token = localStorage.getItem('token');
     const response = await axios.post(`${API_URL}/api/matches/${matchId}/reject`, {}, { headers: { Authorization: `Bearer ${token}` } });
     alert(response.data);
-    fetchMatchRequests();
+    await fetchMatchRequests();
+
   } catch (error) {
     alert(error.response?.data || '매칭 거절 중 오류가 발생했습니다.');
   }
