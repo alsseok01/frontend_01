@@ -13,6 +13,7 @@ const MatchRequestsPage = () => {
     sentMatchRequests,
     fetchSentMatchRequests,
     deleteMatch, // AuthContext에서 deleteMatch 가져오기
+    user
   } = useAuth();
   
   const navigate = useNavigate(); // 페이지 이동을 위한 navigate 함수
@@ -34,9 +35,14 @@ const MatchRequestsPage = () => {
     }
   };
 
-  const handleChat = (matchId) => {
+  //const handleChat = (matchId) => {
     // 채팅 페이지로 이동합니다. (matchId를 URL 파라미터로 전달)
-    navigate(`/chat/${matchId}`);
+    //navigate(`/chat/${matchId}`);
+  //};
+
+  const handleChat = (match) => {
+     const opponent = match.requester.id === user.id ? match.schedule.member : match.requester;
+    navigate(`/chat/${match.id}`, { state: { opponent } });
   };
 
   // "보낸 신청"의 상태에 따라 다른 UI를 렌더링하는 함수
@@ -80,10 +86,14 @@ const MatchRequestsPage = () => {
                     {m.schedule?.date ?? ''} {m.schedule?.time ?? ''}시&nbsp;
                     <strong>{m.schedule?.placeName ?? ''}</strong> 일정에 신청했습니다.
                   </div>
-                  <div>
-                    <Button color="success" size="sm" onClick={() => acceptMatch(m.id)} className="me-2">수락</Button>
-                    <Button color="danger" size="sm" onClick={() => rejectMatch(m.id)}>거절</Button>
-                  </div>
+                  {m.status === 'PENDING' ? (
+                    <div>
+                      <Button color="success" size="sm" onClick={() => acceptMatch(m.id)} className="me-2">수락</Button>
+                      <Button color="danger" size="sm" onClick={() => rejectMatch(m.id)}>거절</Button>
+                    </div>
+                  ) : ( // ACCEPTED 상태일 때
+                    <Button color="primary" size="sm" onClick={() => handleChat(m)}>채팅</Button>
+                  )}
                 </ListGroupItem>
               ))
             ) : (
