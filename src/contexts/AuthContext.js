@@ -20,10 +20,11 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await axios.get(`${API_URL}/api/schedules/my`, {
+      const response = await axios.get(`${API_URL}/api/matches`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+      setMatchRequests(response.data);
+
       let scheduleList;
     if (Array.isArray(response.data)) {
       scheduleList = response.data;
@@ -153,6 +154,9 @@ const fetchMatchRequests = useCallback(async () => {
   if (!token) return;
   try {
     const response = await axios.get(`${API_URL}/api/matches`, { headers: { Authorization: `Bearer ${token}` } });
+
+    console.log("--- 받은 매칭 신청 API 응답 ---", response.data);
+
     setMatchRequests(response.data);
   } catch (err) {
     console.error('매칭 요청 목록을 불러오지 못했습니다.', err);
@@ -165,6 +169,9 @@ const fetchSentMatchRequests = useCallback(async () => {
   if (!token) return;
   try {
     const response = await axios.get(`${API_URL}/api/matches/sent`, { headers: { Authorization: `Bearer ${token}` } });
+
+    console.log("--- 내가 보낸 매칭 신청 API 응답 ---", response.data);
+
     setSentMatchRequests(response.data);
   } catch (err) {
     console.error('내가 보낸 매칭 요청 목록을 불러오지 못했습니다.', err);
@@ -172,17 +179,33 @@ const fetchSentMatchRequests = useCallback(async () => {
   }
 }, []);
 
-const deleteSentMatch = async (matchId) => {
-  try {
-    const token = localStorage.getItem('token');
-    await axios.delete(`${API_URL}/api/matches/${matchId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    fetchSentMatchRequests(); // 삭제 후 목록 갱신
-  } catch (err) {
-    alert(err.response?.data || '매칭 삭제 중 오류가 발생했습니다.');
-  }
-};
+const deleteMatch = async (matchId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_URL}/api/matches/${matchId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchSentMatchRequests(); // 내가 보낸 신청 목록 갱신
+      fetchMatchRequests();     // 받은 매칭 신청 목록 갱신
+    } catch (err) {
+      alert(err.response?.data || '매칭 삭제/나가기 중 오류가 발생했습니다.');
+      throw err; // 에러를 다시 던져서 호출한 컴포넌트가 알 수 있도록 함
+    }
+  };
+
+  const confirmMatch = async (matchId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.post(`${API_URL}/api/matches/${matchId}/confirm`, {}, { 
+                headers: { Authorization: `Bearer ${token}` } 
+            });
+            alert(response.data);
+            fetchMatchRequests(); // 목록 새로고침
+            fetchSentMatchRequests(); // 보낸 목록도 새로고침
+        } catch (error) {
+            alert(error.response?.data || '매칭 확정 중 오류가 발생했습니다.');
+        }
+    };
 
 const acceptMatch = async (matchId) => {
   try {
@@ -231,7 +254,8 @@ const rejectMatch = async (matchId) => {
     rejectMatch,
     sentMatchRequests,
     fetchSentMatchRequests,
-    deleteSentMatch
+    deleteMatch,
+    confirmMatch
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

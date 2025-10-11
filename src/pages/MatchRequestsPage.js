@@ -1,8 +1,6 @@
-// src/pages/MatchRequestsPage.js
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Card, CardBody, CardHeader, ListGroup, ListGroupItem, Container } from 'reactstrap';
+import { Button, Card, CardBody, CardHeader, ListGroup, ListGroupItem, Container, Row, Col } from 'reactstrap';
 import { useAuth } from '../contexts/AuthContext';
 import '../css/BoardPage.css';
 
@@ -12,9 +10,10 @@ const MatchRequestsPage = () => {
     fetchMatchRequests,
     acceptMatch,
     rejectMatch,
+    confirmMatch,
     sentMatchRequests,
     fetchSentMatchRequests,
-    deleteSentMatch,
+    deleteMatch,
     user
   } = useAuth();
   
@@ -26,86 +25,138 @@ const MatchRequestsPage = () => {
   }, [fetchMatchRequests, fetchSentMatchRequests]);
 
   const handleDelete = async (matchId) => {
-    if (window.confirm("정말로 이 신청을 삭제하시겠습니까?")) {
-      await deleteSentMatch(matchId);
-      // ✅ deleteSentMatch 내부에서 목록을 갱신하므로 별도 호출이 필요 없을 수 있습니다.
-      // 만약 갱신이 안된다면 아래 코드를 추가하세요.
-      // await fetchSentMatchRequests();
+    if (window.confirm('정말로 이 신청을 삭제하시겠습니까?')) {
+      await deleteMatch(matchId);
     }
   };
   
-  // ✅ [수정] 버튼 클릭 시 호출될 함수들
   const onAccept = async (id) => {
     await acceptMatch(id);
-    // acceptMatch 함수 내부에서 목록을 갱신하므로 추가 호출이 필요 없을 수 있습니다.
-    // 만약 갱신이 안된다면 아래 코드를 활성화 하세요.
-    // await fetchMatchRequests();
-    // await fetchSentMatchRequests();
   };
 
   const onReject = async (id) => {
     await rejectMatch(id);
-    // rejectMatch 함수 내부에서 목록을 갱신하므로 추가 호출이 필요 없을 수 있습니다.
-    // 만약 갱신이 안된다면 아래 코드를 활성화 하세요.
-    // await fetchMatchRequests();
   };
 
-  const handleChat = (match) => {
+  const onConfirm = async (id) => {
+    if (window.confirm('약속을 확정하시겠습니까? 확정 후에는 매칭 목록에서 사라집니다.')) {
+        await confirmMatch(id);
+    }
+  };
+
+  const handleChat = (matchOrId) => {
+    const match =
+      typeof matchOrId === 'object'
+        ? matchOrId
+        : sentMatchRequests.find((m) => m.id === matchOrId) ||
+          matchRequests.find((m) => m.id === matchOrId);
     if (!match) return;
-    const opponent = match.requester?.id === user.id ? match.schedule?.member : match.requester;
+    const opponent =
+      match.requester?.id === user.id ? match.schedule?.member : match.requester;
     navigate(`/chat/${match.id}`, { state: { opponent } });
   };
 
   const renderSentRequestStatus = (request) => {
-    switch (request.status) {
+    const status = String(request.status || '').toUpperCase();
+    switch (status) {
       case 'ACCEPTED':
         return (
           <div className="request-status">
             <span className="status-accepted">수락됨</span>
-            <Button onClick={() => handleChat(request)} color="primary" size="sm">채팅</Button>
+            <Button onClick={() => handleChat(request)} color="primary" size="sm" className="me-2">
+              채팅
+            </Button>
+            <Button color="success" size="sm" onClick={() => onConfirm(request.id)}>확정하기</Button>
           </div>
         );
       case 'REJECTED':
         return (
           <div className="request-status">
             <span className="status-rejected">거절됨</span>
-            <Button onClick={() => handleDelete(request.id)} color="danger" outline size="sm" className="delete-button">X</Button>
+            <Button
+              onClick={() => handleDelete(request.id)}
+              color="danger"
+              outline
+              size="sm"
+              className="delete-button"
+            >
+              X
+            </Button>
           </div>
         );
       default: // PENDING
-        return (
-          <div className="request-status">
-            <span>대기중</span>
-          </div>
-        );
+        return <span>대기중</span>;
     }
   };
 
+  const receivedRequestsToDisplay = matchRequests.filter(
+    m => String(m.status).toUpperCase() !== 'CONFIRMED'
+  );
+
+  const sentRequestsToDisplay = sentMatchRequests.filter(
+    m => String(m.status).toUpperCase() !== 'CONFIRMED'
+  );
+
   return (
-    <Container className="mt-4">
+    // ✅ [수정] Container에 `paddingTop` 스타일을 추가하여 모바일 헤더와 겹치지 않도록 공간을 확보합니다.
+    <Container className="mt-4" style={{ paddingTop: '60px' }}>
+      <Row className="text-center mb-4">
+        <Col xs="4" className="pe-2">
+            <Card className="h-100 shadow-sm">
+                <CardBody className="p-2 p-md-3">
+                    <h6 className="text-muted" style={{fontSize: '0.8rem'}}>보낸 신청</h6>
+                    <h4 className="font-weight-bold mb-0">{sentRequestsToDisplay.length}</h4>
+                </CardBody>
+            </Card>
+        </Col>
+        <Col xs="4" className="px-1">
+            <Card className="h-100 shadow-sm">
+                <CardBody className="p-2 p-md-3">
+                    <h6 className="text-muted" style={{fontSize: '0.8rem'}}>받은 신청</h6>
+                    <h4 className="font-weight-bold mb-0">{receivedRequestsToDisplay.length}</h4>
+                </CardBody>
+            </Card>
+        </Col>
+        <Col xs="4" className="ps-2">
+            <Card className="h-100 shadow-sm">
+                <CardBody className="p-2 p-md-3">
+                    <h6 className="text-muted" style={{fontSize: '0.8rem'}}>내 평점</h6>
+                    <h4 className="font-weight-bold mb-0">N/A</h4>
+                </CardBody>
+            </Card>
+        </Col>
+      </Row>
+
       {/* 받은 매칭 신청 카드 */}
       <Card className="mb-4">
         <CardHeader><h4>받은 매칭 신청</h4></CardHeader>
         <CardBody>
           <ListGroup flush>
-            {matchRequests.length > 0 ? (
-              matchRequests.map(m => (
-                <ListGroupItem key={m.id} className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <strong>{m.requester?.name ?? '알 수 없음'}</strong> 님이&nbsp;
-                    <strong>{m.schedule?.placeName ?? ''}</strong> 일정에 신청했습니다.
-                  </div>
-                  {m.status === 'PENDING' ? (
+            {receivedRequestsToDisplay.length > 0 ? (
+              receivedRequestsToDisplay.map(m => {
+                const status = String(m.status || '').toUpperCase();
+                return (
+                  <ListGroupItem key={m.id} className="d-flex justify-content-between align-items-center">
                     <div>
-                      {/* ✅ [수정] onClick 핸들러를 onAccept, onReject 함수로 연결합니다. */}
-                      <Button color="success" size="sm" onClick={() => onAccept(m.id)} className="me-2">수락</Button>
-                      <Button color="danger" size="sm" onClick={() => onReject(m.id)}>거절</Button>
+                      <strong>{m.requester?.name ?? '알 수 없음'}</strong> 님이&nbsp;
+                      <strong>{m.schedule?.placeName ?? ''}</strong> 일정에 신청했습니다.
                     </div>
-                  ) : ( // ACCEPTED 상태일 때
-                    <Button color="primary" size="sm" onClick={() => handleChat(m)}>채팅</Button>
-                  )}
-                </ListGroupItem>
-              ))
+                    {status === 'PENDING' ? (
+                      <div>
+                        <Button color="success" size="sm" onClick={() => onAccept(m.id)} className="me-2">수락</Button>
+                        <Button color="danger" size="sm" onClick={() => onReject(m.id)}>거절</Button>
+                      </div>
+                    ) : status === 'ACCEPTED' ? (
+                      <div>
+                        <Button color="primary" size="sm" onClick={() => handleChat(m)} className="me-2">채팅</Button>
+                        <Button color="success" size="sm" onClick={() => onConfirm(m.id)}>확정하기</Button>
+                      </div>
+                    ) : status === 'REJECTED' ? (
+                      <span className="status-rejected">거절됨</span>
+                    ) : null}
+                  </ListGroupItem>
+                );
+              })
             ) : (
               <p className="text-muted">받은 매칭 신청이 없습니다.</p>
             )}
@@ -118,8 +169,8 @@ const MatchRequestsPage = () => {
         <CardHeader><h4>내가 보낸 신청</h4></CardHeader>
         <CardBody>
           <ListGroup flush>
-            {sentMatchRequests.length > 0 ? (
-              sentMatchRequests.map(m => (
+            {sentRequestsToDisplay.length > 0 ? (
+              sentRequestsToDisplay.map(m => (
                 <ListGroupItem key={m.id} className="d-flex justify-content-between align-items-center">
                   <div>
                     <strong>{m.schedule?.member?.name ?? '알 수 없음'}</strong> 님의&nbsp;

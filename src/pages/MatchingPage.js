@@ -141,7 +141,6 @@ const ScheduleList = ({ schedules, onScheduleSelect, selectedSchedule, selectedD
                                                 onViewProfile(schedule); 
                                             }}
                                         >
-                                            {/* ✅ 이 부분에서 상대방 프로필 이미지를 표시합니다. */}
                                             <img
                                                 src={schedule.user.profileImage || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'}
                                                 alt={schedule.user.name}
@@ -201,6 +200,7 @@ const FilterModal = ({ isOpen, toggle, onApply, initialFilters }) => {
     );
 };
 
+// ✅ [수정] ProfileModal 컴포넌트를 아래와 같이 변경합니다.
 const ProfileModal = ({ isOpen, toggle, schedule }) => {
     if (!schedule || !schedule.user) return null;
 
@@ -211,7 +211,6 @@ const ProfileModal = ({ isOpen, toggle, schedule }) => {
     return (
         <Modal isOpen={isOpen} toggle={toggle} centered>
             <ModalHeader toggle={toggle} className="d-flex align-items-center">
-                {/* ✅ 프로필 확인 창 헤더 이미지 */}
                 <img
                     src={schedule.user.profileImage || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'}
                     alt={schedule.user.name}
@@ -219,28 +218,39 @@ const ProfileModal = ({ isOpen, toggle, schedule }) => {
                 />
                 {schedule.user.name}님의 프로필
             </ModalHeader>
-            <ModalBody className="text-center">
-                {/* ✅ 프로필 확인 창 본문 이미지 */}
-                <img
-                    src={schedule.user.profileImage || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'}
-                    alt={schedule.user.name}
-                    className="img-fluid rounded-circle mb-3"
-                    style={{ width: '100px', height: '100px', objectFit: 'cover' }}
-                />
-                <h5 className="mt-2">{schedule.user.name}</h5>
-                <hr />
-                <h5>음식 취향</h5>
-                <div className="d-flex flex-wrap justify-content-center" style={{ gap: '8px' }}>
-                    {userPreferences.length > 0 ? (
-                        userPreferences.map(pref => (
-                            <Badge key={pref} color="info" pill style={{ fontSize: '0.9rem', padding: '8px 12px' }}>
-                                {pref}
-                            </Badge>
-                        ))
-                    ) : (
-                        <p className="text-muted">아직 설정된 취향이 없습니다.</p>
-                    )}
+            <ModalBody>
+                <div className="text-center">
+                    <img
+                        src={schedule.user.profileImage || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'}
+                        alt={schedule.user.name}
+                        className="img-fluid rounded-circle mb-3"
+                        style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                    />
+                    <h5 className="mt-2">{schedule.user.name}</h5>
                 </div>
+                <hr />
+                <Row className="text-center">
+                    <Col>
+                        <h5>음식 취향</h5>
+                        <div className="d-flex flex-wrap justify-content-center mt-3" style={{ gap: '8px', minHeight: '10px' }}>
+                            {userPreferences.length > 0 ? (
+                                userPreferences.map(pref => (
+                                    <Badge key={pref} color="info" pill style={{ fontSize: '0.9rem', padding: '8px 12px' }}>
+                                        {pref}
+                                    </Badge>
+                                ))
+                            ) : (
+                                <p className="text-muted">설정된 취향이 없습니다.</p>
+                            )}
+                        </div>
+                    </Col>
+                    <Col>
+                        <h5>평점</h5>
+                        <div className="d-flex align-items-center justify-content-center mt-3" style={{ minHeight: '50px' }}>
+                            <h4 className="font-weight-bold mb-0">N/A</h4>
+                        </div>
+                    </Col>
+                </Row>
             </ModalBody>
             <ModalFooter>
                 <Button color="secondary" onClick={toggle}>닫기</Button>
@@ -280,23 +290,18 @@ const MatchingPage = () => {
         try {
             const token = localStorage.getItem('token');
             const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-            const response = await axios.get(`${API_URL}/api/schedules/all`, {
+            const response = await axios.get(`${API_URL}/api/schedules`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            setSchedules(response.data);
-            setOriginalSchedules(response.data);
 
             const allSchedules = response.data;
 
-            // 현재 날짜와 3주 후 날짜 계산
             const today = new Date();
             const limitDate = new Date();
             limitDate.setDate(today.getDate() + 21);
 
-            // 오늘부터 3주 후까지의 일정만 필터링
             const filtered = allSchedules.filter((s) => {
                 const dateObj = new Date(s.date);
-                // new Date(today.toDateString())로 오늘 자정 기준 비교
                 return (
                 dateObj >= new Date(today.toDateString()) && dateObj <= limitDate
                 );
