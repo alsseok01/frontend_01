@@ -19,7 +19,7 @@ const RedirectHandler = () => {
       return;
     }
     
-    if (token) {
+    if (token && token.length > 10) {
       try {
         await socialLogin(token);
         navigate('/');

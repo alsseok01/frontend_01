@@ -116,10 +116,30 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       setIsAuthenticated(true);
       fetchMySchedules(); // ✅ 로그인 성공 직후에도 일정 데이터를 불러옵니다.
+      return userData;
     } else {
       console.error("서버 응답에 토큰이 없습니다.");
     }
   };
+  
+  const socialLogin = useCallback(async (token) => {
+      localStorage.setItem('token', token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      try {
+          const response = await axios.get(`${API_URL}/api/user/me`);
+          const userData = response.data;
+          setUser(userData);
+          setIsAuthenticated(true);
+          fetchMySchedules();
+          return userData;
+      } catch (error) {
+          console.error("소셜 로그인 후 사용자 정보 가져오기 실패", error);
+          localStorage.removeItem('token');
+          setIsAuthenticated(false);
+          setUser(null);
+          throw error;
+      }
+  }, [fetchMySchedules]);
 
   axios.defaults.withCredentials = true;
 
@@ -297,7 +317,8 @@ const rejectMatch = async (matchId) => {
     deleteMatch,
     confirmMatch,
     unreadMessageCount,
-    clearUnreadMessages
+    clearUnreadMessages,
+    socialLogin
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

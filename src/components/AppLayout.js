@@ -78,6 +78,9 @@ const AppLayout = ({ children }) => {
               <Link to="/profile" className="custom-dropdown-item text-decoration-none d-block" onClick={() => setProfileMenuOpen(false)}>
                 사용자 정보
               </Link>
+              <Link to="/review-entry" className="custom-dropdown-item text-decoration-none d-block" onClick={() => setProfileMenuOpen(false)}>
+                후기 남기기
+              </Link>
               <Link 
                 to="/match-requests" 
                 className="custom-dropdown-item text-decoration-none d-block d-flex justify-content-between align-items-center" 
@@ -171,6 +174,7 @@ const AppLayout = ({ children }) => {
                 <NavItem><NavLink tag={Link} to="/matching" onClick={handleMenuClick} className="offcanvas-nav-link">🤝 매칭하기</NavLink></NavItem>
                 <NavItem><NavLink tag={Link} to="/schedule" onClick={handleMenuClick} className="offcanvas-nav-link">📅 일정 만들기</NavLink></NavItem>
                 <NavItem><NavLink tag={Link} to="/board" onClick={handleMenuClick} className="offcanvas-nav-link">📋 게시판</NavLink></NavItem>
+                <NavItem><NavLink tag={Link} to="/review-entry" onClick={handleMenuClick} className="offcanvas-nav-link">✍️ 후기 남기기</NavLink></NavItem>
             </Nav>
         </OffcanvasBody>
       </Offcanvas>
