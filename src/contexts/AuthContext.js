@@ -1,5 +1,7 @@
-import React, { createContext, useState, useContext, useEffect, useCallback, response } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
+import { Stomp } from '@stomp/stompjs';
+import SockJS from 'sockjs-client'
 
 const AuthContext = createContext(null);
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
@@ -10,10 +12,11 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState('home');
   const [authSubPage, setAuthSubPage] = useState('login');
-  // ✅ [수정] 일정(events) 상태를 AuthContext에서 관리하도록 위치를 옮겼습니다.
   const [events, setEvents] = useState({});
   const [sentMatchRequests, setSentMatchRequests] = useState([]);
 
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const notificationClientRef = useRef(null);
   
   const fetchMySchedules = useCallback(async () => {
     try {
@@ -57,15 +60,33 @@ export const AuthProvider = ({ children }) => {
 }, []);
 
   // 앱이 처음 시작될 때 사용자 정보와 함께 "내 일정"도 불러오도록 수정합니다.
-  useEffect(() => {
+   useEffect(() => {
     const token = localStorage.getItem('token');
+
+    const connectNotifications = (authToken, authUser) => {
+        if (authUser && authUser.id && !notificationClientRef.current) {
+            const socket = new SockJS(`${API_URL}/ws`);
+            const stompClient = Stomp.over(socket);
+            stompClient.reconnect_delay = 5000; // 5초마다 재연결 시도
+
+            stompClient.connect({ Authorization: `Bearer ${authToken}` }, () => {
+              stompClient.subscribe(`/topic/user/${authUser.id}/notifications`, () => {
+                setUnreadMessageCount(prevCount => prevCount + 1);
+              });
+            });
+            notificationClientRef.current = stompClient;
+        }
+    }
+
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       axios.get(`${API_URL}/api/user/me`)
         .then(response => {
+          const fetchedUser = response.data;
           setUser(response.data);
           setIsAuthenticated(true);
-          fetchMySchedules(); 
+          fetchMySchedules();
+          connectNotifications(token, fetchedUser);
           
         })
         .catch(() => {
@@ -77,6 +98,14 @@ export const AuthProvider = ({ children }) => {
     } else {
       setIsLoading(false);
     }
+
+    return () => { // 컴포넌트가 사라질 때 웹소켓 연결을 해제합니다.
+      if (notificationClientRef.current) {
+        notificationClientRef.current.disconnect();
+        notificationClientRef.current = null;
+      }
+    };
+
   }, [fetchMySchedules]);
 
   const processLoginData = (loginData) => {
@@ -128,7 +157,18 @@ export const AuthProvider = ({ children }) => {
     setEvents({}); // ✅ [수정] 로그아웃 시 일정 데이터 초기화
     localStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
-    onNavigate('home');
+
+    if (notificationClientRef.current) {
+        notificationClientRef.current.disconnect();
+        notificationClientRef.current = null;
+    }
+    setUnreadMessageCount(0);
+
+   // onNavigate('home');
+  };
+
+  const clearUnreadMessages = () => {
+    setUnreadMessageCount(0);
   };
 
   const updateUser = (newUserData) => {
@@ -255,7 +295,9 @@ const rejectMatch = async (matchId) => {
     sentMatchRequests,
     fetchSentMatchRequests,
     deleteMatch,
-    confirmMatch
+    confirmMatch,
+    unreadMessageCount,
+    clearUnreadMessages
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

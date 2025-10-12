@@ -63,10 +63,9 @@ const MatchRequestsPage = () => {
         return (
           <div className="request-status">
             <span className="status-accepted">수락됨</span>
-            <Button onClick={() => handleChat(request)} color="primary" size="sm" className="me-2">
+            <Button onClick={() => handleChat(request)} color="primary" size="sm">
               채팅
             </Button>
-            <Button color="success" size="sm" onClick={() => onConfirm(request.id)}>확정하기</Button>
           </div>
         );
       case 'REJECTED':
@@ -89,6 +88,7 @@ const MatchRequestsPage = () => {
     }
   };
 
+  // 화면 목록에 표시할 매칭만 필터링 (확정된 것은 제외)
   const receivedRequestsToDisplay = matchRequests.filter(
     m => String(m.status).toUpperCase() !== 'CONFIRMED'
   );
@@ -98,14 +98,14 @@ const MatchRequestsPage = () => {
   );
 
   return (
-    // ✅ [수정] Container에 `paddingTop` 스타일을 추가하여 모바일 헤더와 겹치지 않도록 공간을 확보합니다.
     <Container className="mt-4" style={{ paddingTop: '60px' }}>
       <Row className="text-center mb-4">
         <Col xs="4" className="pe-2">
             <Card className="h-100 shadow-sm">
                 <CardBody className="p-2 p-md-3">
                     <h6 className="text-muted" style={{fontSize: '0.8rem'}}>보낸 신청</h6>
-                    <h4 className="font-weight-bold mb-0">{sentRequestsToDisplay.length}</h4>
+                    {/* ✅ [수정] 필터링되지 않은 전체 개수 (sentMatchRequests.length)를 표시합니다. */}
+                    <h4 className="font-weight-bold mb-0">{sentMatchRequests.length}</h4>
                 </CardBody>
             </Card>
         </Col>
@@ -113,7 +113,8 @@ const MatchRequestsPage = () => {
             <Card className="h-100 shadow-sm">
                 <CardBody className="p-2 p-md-3">
                     <h6 className="text-muted" style={{fontSize: '0.8rem'}}>받은 신청</h6>
-                    <h4 className="font-weight-bold mb-0">{receivedRequestsToDisplay.length}</h4>
+                    {/* ✅ [수정] 필터링되지 않은 전체 개수 (matchRequests.length)를 표시합니다. */}
+                    <h4 className="font-weight-bold mb-0">{matchRequests.length}</h4>
                 </CardBody>
             </Card>
         </Col>
@@ -127,7 +128,7 @@ const MatchRequestsPage = () => {
         </Col>
       </Row>
 
-      {/* 받은 매칭 신청 카드 */}
+      {/* 받은 매칭 신청 카드 (목록은 필터링된 결과 사용) */}
       <Card className="mb-4">
         <CardHeader><h4>받은 매칭 신청</h4></CardHeader>
         <CardBody>
@@ -164,7 +165,7 @@ const MatchRequestsPage = () => {
         </CardBody>
       </Card>
 
-      {/* 내가 보낸 신청 카드 */}
+      {/* 내가 보낸 신청 카드 (목록은 필터링된 결과 사용) */}
       <Card>
         <CardHeader><h4>내가 보낸 신청</h4></CardHeader>
         <CardBody>
@@ -186,6 +187,8 @@ const MatchRequestsPage = () => {
         </CardBody>
       </Card>
     </Container>
+
+    
   );
 };
 
