@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Button, Card, CardBody, Container, Row, Col, FormGroup, Label, Input } from 'reactstrap';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 // ✨ 1. 선택 가능한 기본 이미지 목록을 정의합니다. (나중에 이 URL들을 원하는 이미지로 바꾸세요)
 import bearImage from '../images/bear.png';
@@ -17,16 +18,18 @@ const defaultImages = [
 
 const ProfileSetupPage = ({ animationClass }) => {
   const [step, setStep] = useState(1);
-  const { updateUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
     gender: '',
-    name: '',
+    name: user?.name || '',
     age: '',
     preferences: {},
     // ✨ 2. 기본 이미지 목록의 첫 번째 이미지를 초기값으로 설정합니다.
-    profileImage: defaultImages[0], 
+    profileImage: user?.profileImage || defaultImages[0],
+    bio: ''
   });
 
   const foodPreferencesList = ['한식', '중식', '일식', '양식', '분식', '맵짱이','맵찔이', '채식주의','육식주의'];
@@ -94,7 +97,7 @@ const ProfileSetupPage = ({ animationClass }) => {
 
       updateUser(response.data);
       alert("설정이 완료되었습니다! 이제 밥상친구를 시작해보세요.");
-      window.location.href = 'home';
+      navigate('/');
     } catch (error) {
       console.error("프로필 설정 실패:", error);
       alert("프로필 저장에 실패했습니다. 다시 시도해주세요.");

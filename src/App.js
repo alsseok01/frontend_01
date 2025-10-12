@@ -15,6 +15,8 @@ import ProfileSetupPage from './pages/ProfileSetupPage';
 import AuthPage from './pages/Auth/AuthPage';
 import RedirectHandler from './pages/Auth/RedirectHandler';
 import { AuthProvider, useAuth } from './contexts/AuthContext'; // 💡 useAuth import
+import WriteReviewPage from './pages/WriteReviewPage';
+import ReviewEntryPage from './pages/ReviewEntryPage';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 // 💡 라우팅 관련 로직을 처리할 별도의 컴포넌트를 만듭니다.
@@ -58,7 +60,8 @@ const AppRoutes = () => {
       <Route path="/profile" element={isAuthenticated ? <ProfilePage /> : <Navigate to="/auth" />} />
       <Route path="/match-requests" element={isAuthenticated ? <MatchRequestsPage /> : <Navigate to="/auth" />} />
       <Route path="/chat/:matchId" element={isAuthenticated ? <ChatPage /> : <Navigate to="/auth" />} />
-      
+      <Route path="/write-review" element={isAuthenticated ? <WriteReviewPage /> : <Navigate to="/auth" />} />
+      <Route path="/review-entry" element={isAuthenticated ? <ReviewEntryPage /> : <Navigate to="/auth" />} />
       {/* 신규 사용자가 아니더라도 프로필 설정 페이지에 접근은 가능해야 합니다. */}
       <Route path="/profile-setup" element={isAuthenticated ? <ProfileSetupPage /> : <Navigate to="/auth" />} />
 
