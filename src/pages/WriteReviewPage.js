@@ -9,7 +9,7 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const WriteReviewPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, fetchMatchRequests, fetchSentMatchRequests } = useAuth();
     const { opponent, matchId } = location.state || {};
 
     const [rating, setRating] = useState(3);
@@ -34,6 +34,10 @@ const WriteReviewPage = () => {
             });
 
             alert("후기가 성공적으로 등록되었습니다.");
+
+            await fetchMatchRequests();
+            await fetchSentMatchRequests();
+
             navigate('/match-requests');
 
         } catch (error) {

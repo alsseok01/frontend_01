@@ -3,6 +3,9 @@ import { Button, Container, Row, Col,  Card, CardBody } from 'reactstrap';
 import homePageBg from '../images/HomePage.png';
 import '../css/HomePage.css';
 import { useAuth } from '../contexts/AuthContext'; 
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 const HomePage = ({  }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -10,26 +13,33 @@ const HomePage = ({  }) => {
   const { onNavigate } = useAuth(); 
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 992);
 
-  // ✅ [추가] 기능 소개 섹션이 화면에 보이는지 여부를 감지하는 상태
   const [featuresVisible, setFeaturesVisible] = useState(false);
-  const featuresRef = useRef(null); // 기능 소개 섹션을 참조할 ref
+  const featuresRef = useRef(null); 
+  const [featuredReviews, setFeaturedReviews] = useState([]);
 
   useEffect(() => {
+    // ✅ [추가] 컴포넌트가 마운트될 때 AI 추천 후기를 불러옵니다.
+    const fetchFeaturedReviews = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/api/ai/featured-reviews`);
+        setFeaturedReviews(response.data);
+      } catch (error) {
+        console.error("AI 추천 후기를 불러오는 데 실패했습니다.", error);
+      }
+    };
+    fetchFeaturedReviews();
+
     const handleResize = () => setIsDesktop(window.innerWidth >= 992);
     window.addEventListener('resize', handleResize);
     
-    // ✅ [추가] Intersection Observer 설정
-   const observer = new IntersectionObserver(
+    const observer = new IntersectionObserver(
       ([entry]) => {
-        // featuresRef가 화면에 보일 때마다 true, 사라지면 false로 상태를 설정합니다.
         setFeaturesVisible(entry.isIntersecting);
       },
-      { 
-        threshold: 0.1, // 섹션이 10% 보였을 때 감지
-      } 
+      { threshold: 0.1 } 
     );
 
-    const currentFeaturesRef = featuresRef.current; // 클린업 함수에서 참조하기 위함
+    const currentFeaturesRef = featuresRef.current;
     if (currentFeaturesRef) {
       observer.observe(currentFeaturesRef);
     }
@@ -37,7 +47,7 @@ const HomePage = ({  }) => {
     return () => {
       window.removeEventListener('resize', handleResize);
       if (currentFeaturesRef) {
-        observer.unobserve(currentFeaturesRef); // 컴포넌트가 사라질 때 관찰 중지
+        observer.unobserve(currentFeaturesRef);
       }
     };
   }, []);
@@ -66,15 +76,7 @@ const HomePage = ({  }) => {
     }
   ];
 
-  // 예시 후기 데이터
-  const reviews = [
-    { name: '김민준', rating: 5, comment: '여기서 만난 분과 좋은 인연을 이어가고 있어요! 정말 최고의 앱입니다.', image: 'https://placehold.co/100x100/A0C4FF/333333?text=M' },
-    { name: '이서아', rating: 5, comment: '덕분에 취향이 비슷한 친구를 만나서 즐거운 시간을 보냈습니다. 일정 관리 기능도 편리해요!', image: 'https://placehold.co/100x100/FFC0CB/333333?text=F' },
-    { name: '박준서', rating: 4, comment: '랜덤 매칭 기능이 신선하고 재밌네요. 다양한 사람들을 만날 수 있어서 좋았습니다.', image: 'https://placehold.co/100x100/B2F2BB/333333?text=M' },
-    { name: '최유나', rating: 5, comment: '지도로 주변 맛집을 찾고 바로 약속을 잡을 수 있어서 정말 편해요. 강추합니다!', image: 'https://placehold.co/100x100/FFD6A5/333333?text=F' },
-    { name: '정현우', rating: 4, comment: '깔끔한 UI와 직관적인 기능들이 마음에 듭니다. 앞으로도 자주 사용할 것 같아요.', image: 'https://placehold.co/100x100/CBAACB/333333?text=M' }
-  ];
-
+  
   const renderStars = (rating) => {
     let stars = '';
     for (let i = 0; i < 5; i++) {
@@ -91,17 +93,17 @@ const HomePage = ({  }) => {
     ...(!isDesktop && { backgroundRepeat: 'no-repeat' })
   };
 
+  const carouselTrackStyle = featuredReviews.length > 0 ? {
+    display: 'flex',
+    width: `calc(320px * ${featuredReviews.length * 2})`,
+    animation: `scroll ${featuredReviews.length * 5}s linear infinite`,
+  } : { display: 'none' };
+
   return (
     <>
-      <style>{`
-         /* 후기 자동 스크롤(캐러셀) 효과 */
+       <style>{`
         .review-carousel-container {
           overflow: hidden;
-        }
-        .review-carousel-track {
-          display: flex;
-          width: calc(320px * ${reviews.length * 2});
-          animation: scroll ${reviews.length * 5}s linear infinite;
         }
         .review-carousel-container:hover .review-carousel-track {
           animation-play-state: paused;
@@ -116,7 +118,7 @@ const HomePage = ({  }) => {
             transform: translateX(0);
           }
           100% {
-            transform: translateX(calc(-320px * ${reviews.length}));
+            transform: translateX(calc(-320px * ${featuredReviews.length}));
           }
         }
       `}</style>
@@ -216,19 +218,20 @@ const HomePage = ({  }) => {
       {/* 하단 후기 섹션 */}
       <div id="reviews-section" className="bg-light text-dark py-5">
         <Container>
-          <h2 className="text-center mb-4 font-weight-bold">생생한 사용자 후기</h2>
+          <h2 className="text-center mb-4 font-weight-bold">AI가 추천하는 사용자 후기</h2>
           <Row className="justify-content-center" >
             <Col lg="10" xl="9">
               <div className="review-carousel-container">
-                <div className="review-carousel-track">
-                  {[...reviews, ...reviews].map((review, index) => (
+                <div className="review-carousel-track" style={carouselTrackStyle}>
+                  {/* 무한 캐러셀 효과를 위해 배열을 두 번 렌더링합니다. */}
+                  {featuredReviews.length > 0 && [...featuredReviews, ...featuredReviews].map((review, index) => (
                     <div key={index} className="review-card-wrapper">
                       <Card className="h-100 shadow-sm">
                         <CardBody className="d-flex flex-column">
                           <div className="d-flex align-items-center mb-3">
-                            <img src={review.image} alt={review.name} className="rounded-circle" style={{width: '50px', height: '50px', marginRight: '1rem'}}/>
+                            <img src={review.reviewerProfileImage || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'} alt={review.reviewerName} className="rounded-circle" style={{width: '50px', height: '50px', marginRight: '1rem', objectFit: 'cover'}}/>
                             <div>
-                              <h5 className="mb-0 font-weight-bold">{review.name}</h5>
+                              <h5 className="mb-0 font-weight-bold">{review.reviewerName}</h5>
                               {renderStars(review.rating)}
                             </div>
                           </div>
@@ -238,6 +241,9 @@ const HomePage = ({  }) => {
                     </div>
                   ))}
                 </div>
+                {featuredReviews.length === 0 && (
+                    <p className="text-center text-muted">아직 추천할 만한 후기가 없어요.</p>
+                )}
               </div>
             </Col>
           </Row>
