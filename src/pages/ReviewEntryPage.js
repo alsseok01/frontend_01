@@ -37,6 +37,14 @@ const ReviewEntryPage = () => {
                 <CardHeader><h4>후기 작성을 위한 코드 입력</h4></CardHeader>
                 <CardBody>
                     <p className="text-muted">상대방의 화면에 표시된 QR 코드를 스캔하거나 6자리 숫자 코드를 입력해주세요.</p>
+                    
+                    {/* ✅ [수정] QR 스캔 버튼 활성화 및 기능 연결 */}
+                    <Button color="warning" block className="mt-3" onClick={() => navigate('/scan-review-qr')}>
+                        📷 QR 코드 스캔하기
+                    </Button>
+                    
+                    <hr />
+
                     <FormGroup>
                         <Label for="reviewCode"><h5>숫자 코드</h5></Label>
                         <Input
@@ -48,9 +56,6 @@ const ReviewEntryPage = () => {
                             maxLength={6}
                         />
                     </FormGroup>
-                    <Button color="warning" block className="mt-3" disabled>
-                        QR 코드 스캔하기 (기능 준비중)
-                    </Button>
                     <Button color="primary" block onClick={handleSubmitCode} className="mt-3">
                         상대방 확인하고 후기 작성하기
                     </Button>
