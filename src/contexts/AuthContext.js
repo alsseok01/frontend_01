@@ -17,13 +17,27 @@ export const AuthProvider = ({ children }) => {
 
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const notificationClientRef = useRef(null);
+
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        try {
+            const response = await axios.get(`${API_URL}/api/user/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            setUser(response.data); // 받아온 최신 정보로 user state를 업데이트
+        } catch (error) {
+            console.error("사용자 정보 새로고침 실패:", error);
+        }
+    }
+  }, []);
   
   const fetchMySchedules = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await axios.get(`${API_URL}/api/matches`, {
+     const response = await axios.get(`${API_URL}/api/schedules/my`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setMatchRequests(response.data);
@@ -318,7 +332,8 @@ const rejectMatch = async (matchId) => {
     confirmMatch,
     unreadMessageCount,
     clearUnreadMessages,
-    socialLogin
+    socialLogin,
+    refreshUser
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

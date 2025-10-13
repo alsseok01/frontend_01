@@ -1,15 +1,8 @@
-// src/pages/MatchRequestsPage.js
-
-import React, { useEffect, useState } from 'react'; // useState 추가
+import React, { useEffect, useMemo } from 'react'; // useMemo 추가
 import { useNavigate } from 'react-router-dom';
-// Modal 관련 컴포넌트와 axios 추가
-import { Button, Card, CardBody, CardHeader, ListGroup, ListGroupItem, Container, Row, Col, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
+import { Button, Card, CardBody, CardHeader, ListGroup, ListGroupItem, Container, Row, Col } from 'reactstrap';
 import { useAuth } from '../contexts/AuthContext';
 import '../css/BoardPage.css';
-import axios from 'axios';
-import { QRCodeSVG } from 'qrcode.react'; 
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 const MatchRequestsPage = () => {
   const {
@@ -20,59 +13,67 @@ const MatchRequestsPage = () => {
     confirmMatch,
     sentMatchRequests,
     fetchSentMatchRequests,
-    deleteMatch,
-    user
+    deleteMatch, // deleteMatch는 PENDING 상태 취소를 위해 남겨둘 수 있습니다 (현재는 사용 안함)
+    user,
+    refreshUser
   } = useAuth();
 
   const navigate = useNavigate();
 
-  // ✅ [추가] 후기 코드 모달을 제어하기 위한 상태
-  const [isReviewModalOpen, setReviewModalOpen] = useState(false);
-  const [reviewCodes, setReviewCodes] = useState(null);
-
   useEffect(() => {
+    refreshUser(); 
     fetchMatchRequests();
     fetchSentMatchRequests();
-  }, [fetchMatchRequests, fetchSentMatchRequests]);
+  }, [fetchMatchRequests, fetchSentMatchRequests, refreshUser]);
 
-  // ✅ [추가] '후기 작성' 버튼 클릭 시 실행될 핸들러
-  const handleOpenReviewModal = async (matchId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/api/reviews/match/${matchId}/code`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setReviewCodes(response.data);
-      setReviewModalOpen(true);
-    } catch (error) {
-      console.error("후기 코드를 가져오는데 실패했습니다:", error);
-      alert(error.response?.data?.error || "후기 코드를 가져오는데 실패했습니다.");
-    }
+  // ✅ [추가] 완료된 항목을 제외한 '받은 신청' 목록을 필터링합니다.
+  const visibleMatchRequests = useMemo(() => {
+    return matchRequests.filter(m => {
+        const status = String(m.status || '').toUpperCase();
+        // 거절되었거나, 내가 호스트로서 후기를 이미 작성했다면 목록에서 숨깁니다.
+        if (status === 'REJECTED' || (status === 'CONFIRMED' && m.hostReviewed)) {
+            return false;
+        }
+        return true;
+    });
+  }, [matchRequests]);
+
+  // ✅ [추가] 완료된 항목을 제외한 '보낸 신청' 목록을 필터링합니다.
+  const visibleSentMatchRequests = useMemo(() => {
+    return sentMatchRequests.filter(m => {
+        const status = String(m.status || '').toUpperCase();
+        // 거절되었거나, 내가 신청자로서 후기를 이미 작성했다면 목록에서 숨깁니다.
+        if (status === 'REJECTED' || (status === 'CONFIRMED' && m.requesterReviewed)) {
+            return false;
+        }
+        return true;
+    });
+  }, [sentMatchRequests]);
+
+
+  const handleWriteReviewClick = (match) => {
+    const isRequester = user.id === match.requester.id;
+    const opponentMember = isRequester ? match.schedule.member : match.requester;
+    const opponentInfo = {
+        opponentId: opponentMember.id,
+        opponentName: opponentMember.name,
+        opponentProfileImage: opponentMember.profileImage
+    };
+    navigate('/write-review', { state: { opponent: opponentInfo, matchId: match.id } });
   };
 
-  // ✅ [추가] 후기 코드 모달을 닫는 함수
-  const toggleReviewModal = () => {
-    setReviewModalOpen(!isReviewModalOpen);
-    setReviewCodes(null); // 모달이 닫힐 때 코드 상태를 초기화
-  };
-
-
-  const handleDelete = async (matchId) => {
-    if (window.confirm('정말로 이 신청을 삭제하시겠습니까?')) {
-      await deleteMatch(matchId);
-    }
-  };
-  
   const onAccept = async (id) => {
     await acceptMatch(id);
   };
 
   const onReject = async (id) => {
-    await rejectMatch(id);
+    if (window.confirm('정말로 이 신청을 거절하시겠습니까?')) {
+        await rejectMatch(id);
+    }
   };
 
   const onConfirm = async (id) => {
-    if (window.confirm('약속을 확정하시겠습니까? 확정 후에는 상대방의 후기를 작성할 수 있습니다.')) { // 문구 수정
+    if (window.confirm('약속을 확정하시겠습니까? 확정 후에는 상대방의 후기를 작성할 수 있습니다.')) {
         await confirmMatch(id);
     }
   };
@@ -89,6 +90,7 @@ const MatchRequestsPage = () => {
     navigate(`/chat/${match.id}`, { state: { opponent } });
   };
 
+  // ✅ [수정] '내가 보낸 신청' 목록 렌더링 함수 - 더 이상 'X' 버튼이 필요 없습니다.
   const renderSentRequestStatus = (request) => {
     const status = String(request.status || '').toUpperCase();
     switch (status) {
@@ -99,44 +101,32 @@ const MatchRequestsPage = () => {
             <Button onClick={() => handleChat(request)} color="primary" size="sm">
               채팅
             </Button>
-            <Button color="success" size="sm" onClick={() => onConfirm(request.id)} className="ms-2">
-              확정하기
-            </Button>
           </div>
         );
-      case 'REJECTED':
-        return (
-          <div className="request-status">
-            <span className="status-rejected">거절됨</span>
-            <Button
-              onClick={() => handleDelete(request.id)}
-              color="danger"
-              outline
-              size="sm"
-              className="delete-button"
-            >
-              X
-            </Button>
-          </div>
-        );
-      // ✅ [추가] '확정됨' 상태일 때 '후기 작성' 버튼을 보여줍니다.
       case 'CONFIRMED':
-        return (
-          <div className="request-status">
-            <span style={{ color: '#17a2b8', fontWeight: 'bold' }}>확정됨</span>
-            <Button onClick={() => handleOpenReviewModal(request.id)} color="info" size="sm">
-              후기 작성
-            </Button>
-          </div>
-        );
+        if (request.requester.id === user.id && !request.requesterReviewed) {
+          return (
+            <div className="request-status">
+              <span style={{ color: '#17a2b8', fontWeight: 'bold' }}>확정됨</span>
+              <Button onClick={() => handleWriteReviewClick(request)} color="info" size="sm">
+                후기 작성
+              </Button>
+            </div>
+          );
+        }
+        // 후기 작성 완료 항목은 이미 필터링되어 이 코드는 실행되지 않습니다.
+        return null;
+      case 'REJECTED':
+         // 거절된 항목은 이미 필터링되어 이 코드는 실행되지 않습니다.
+        return null; 
       default: // PENDING
         return <span>대기중</span>;
     }
   };
 
-  // ✅ [삭제] 확정된 매칭을 필터링하던 아래 두 줄을 삭제합니다.
-  // const receivedRequestsToDisplay = matchRequests.filter(m => String(m.status).toUpperCase() !== 'CONFIRMED');
-  // const sentRequestsToDisplay = sentMatchRequests.filter(m => String(m.status).toUpperCase() !== 'CONFIRMED');
+  const displayRating = user && user.reviewCount >= 5
+    ? parseFloat(user.averageRating).toFixed(1)
+    : 'N/A';
 
   return (
     <>
@@ -146,7 +136,7 @@ const MatchRequestsPage = () => {
               <Card className="h-100 shadow-sm">
                   <CardBody className="p-2 p-md-3">
                       <h6 className="text-muted" style={{fontSize: '0.8rem'}}>보낸 신청</h6>
-                      <h4 className="font-weight-bold mb-0">{sentMatchRequests.length}</h4>
+                      <h4 className="font-weight-bold mb-0">{visibleSentMatchRequests.length}</h4>
                   </CardBody>
               </Card>
           </Col>
@@ -154,7 +144,7 @@ const MatchRequestsPage = () => {
               <Card className="h-100 shadow-sm">
                   <CardBody className="p-2 p-md-3">
                       <h6 className="text-muted" style={{fontSize: '0.8rem'}}>받은 신청</h6>
-                      <h4 className="font-weight-bold mb-0">{matchRequests.length}</h4>
+                      <h4 className="font-weight-bold mb-0">{visibleMatchRequests.length}</h4>
                   </CardBody>
               </Card>
           </Col>
@@ -162,7 +152,7 @@ const MatchRequestsPage = () => {
               <Card className="h-100 shadow-sm">
                   <CardBody className="p-2 p-md-3">
                       <h6 className="text-muted" style={{fontSize: '0.8rem'}}>내 평점</h6>
-                      <h4 className="font-weight-bold mb-0">N/A</h4>
+                      <h4 className="font-weight-bold mb-0">{displayRating}</h4>
                   </CardBody>
               </Card>
           </Col>
@@ -172,9 +162,9 @@ const MatchRequestsPage = () => {
           <CardHeader><h4>받은 매칭 신청</h4></CardHeader>
           <CardBody>
             <ListGroup flush>
-              {/* ✅ [수정] 필터링된 배열 대신 원본 matchRequests 배열을 사용합니다. */}
-              {matchRequests.length > 0 ? (
-                matchRequests.map(m => {
+              {/* ✅ [수정] 필터링된 'visibleMatchRequests' 배열을 사용합니다. */}
+              {visibleMatchRequests.length > 0 ? (
+                visibleMatchRequests.map(m => {
                   const status = String(m.status || '').toUpperCase();
                   return (
                     <ListGroupItem key={m.id} className="d-flex justify-content-between align-items-center">
@@ -192,13 +182,10 @@ const MatchRequestsPage = () => {
                           <Button color="primary" size="sm" onClick={() => handleChat(m)} className="me-2">채팅</Button>
                           <Button color="success" size="sm" onClick={() => onConfirm(m.id)}>확정하기</Button>
                         </div>
-                      ) : status === 'REJECTED' ? (
-                        <span className="status-rejected">거절됨</span>
-                      // ✅ [추가] '확정됨' 상태일 때 '후기 작성' 버튼을 보여줍니다.
                       ) : status === 'CONFIRMED' ? (
-                        <div>
-                          <Button color="info" size="sm" onClick={() => handleOpenReviewModal(m.id)}>후기 작성</Button>
-                        </div>
+                        (m.schedule.member.id === user.id && !m.hostReviewed) ? (
+                            <Button color="info" size="sm" onClick={() => handleWriteReviewClick(m)}>후기 작성</Button>
+                        ) : null // 후기 작성 완료 항목은 이미 필터링됨
                       ) : null}
                     </ListGroupItem>
                   );
@@ -214,9 +201,9 @@ const MatchRequestsPage = () => {
           <CardHeader><h4>내가 보낸 신청</h4></CardHeader>
           <CardBody>
             <ListGroup flush>
-              {/* ✅ [수정] 필터링된 배열 대신 원본 sentMatchRequests 배열을 사용합니다. */}
-              {sentMatchRequests.length > 0 ? (
-                sentMatchRequests.map(m => (
+              {/* ✅ [수정] 필터링된 'visibleSentMatchRequests' 배열을 사용합니다. */}
+              {visibleSentMatchRequests.length > 0 ? (
+                visibleSentMatchRequests.map(m => (
                   <ListGroupItem key={m.id} className="d-flex justify-content-between align-items-center">
                     <div>
                       <strong>{m.schedule?.member?.name ?? '알 수 없음'}</strong> 님의&nbsp;
@@ -232,28 +219,6 @@ const MatchRequestsPage = () => {
           </CardBody>
         </Card>
       </Container>
-      
-      {/* ✅ [추가] 후기 코드 생성 모달 */}
-      <Modal isOpen={isReviewModalOpen} toggle={toggleReviewModal} centered>
-        <ModalHeader toggle={toggleReviewModal}>후기 작성을 위한 코드 생성</ModalHeader>
-        <ModalBody className="text-center">
-          <p>상대방이 아래 코드를 스캔하거나 입력하도록 안내해주세요.</p>
-          {reviewCodes && (
-            <>
-              <div className="mb-4">
-                <QRCodeSVG  value={reviewCodes.qrCode} size={256} />
-              </div>
-              <div>
-                <h5>숫자 코드</h5>
-                <p className="display-6 font-weight-bold">{reviewCodes.numericCode}</p>
-              </div>
-            </>
-          )}
-        </ModalBody>
-        <ModalFooter>
-          <Button color="secondary" onClick={toggleReviewModal}>닫기</Button>
-        </ModalFooter>
-      </Modal>
     </>
   );
 };

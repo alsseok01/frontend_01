@@ -11,7 +11,7 @@ import {
   Nav,
   NavItem,
   NavLink,
-  Badge // Badge 컴포넌트 import
+  Badge
 } from 'reactstrap';
 import myLogo from '../images/logo.png';
 import '../css/HomePage.css';
@@ -38,7 +38,6 @@ const AppLayout = ({ children }) => {
       const defaultProfileImage = 'https://mblogthumb-phinf.pstatic.net/MjAyMDA2MTBfMTY1/MDAxNTkxNzQ2ODcyOTI2.Yw5WjjU3IuItPtqbegrIBJr3TSDMd_OPhQ2Nw-0-0ksg.8WgVjtB0fy0RCv0XhhUOOWt90Kz_394Zzb6xPjG6I8gg.PNG.lamute/user.png?type=w800';
 
       return (
-        // 🔔 1. 이 div가 프로필 이미지와 알림 배지를 함께 묶어주는 기준점이 됩니다.
         <div style={{ position: 'relative' }}>
           <img
             src={user.profileImage || defaultProfileImage}
@@ -48,12 +47,11 @@ const AppLayout = ({ children }) => {
             onClick={() => setProfileMenuOpen(!isProfileMenuOpen)}
           />
           
-          {/* 🔔 2. 읽지 않은 메시지가 1개 이상일 때만 숫자 배지가 표시됩니다. */}
           {unreadMessageCount > 0 && (
             <Badge color="danger" pill style={{
-              position: 'absolute', // 이미지를 기준으로 위치를 잡습니다.
-              top: '-5px',          // 이미지 상단에서 살짝 위로
-              right: '-5px',         // 이미지 우측에서 살짝 바깥으로
+              position: 'absolute',
+              top: '-5px',
+              right: '-5px',
               fontSize: '0.7em',
               border: '2px solid white'
             }}>
@@ -78,15 +76,16 @@ const AppLayout = ({ children }) => {
               <Link to="/profile" className="custom-dropdown-item text-decoration-none d-block" onClick={() => setProfileMenuOpen(false)}>
                 사용자 정보
               </Link>
-              <Link to="/review-entry" className="custom-dropdown-item text-decoration-none d-block" onClick={() => setProfileMenuOpen(false)}>
-                후기 남기기
+              {/* ✅ [수정] '후기 남기기' 링크를 '활동' 페이지로 변경 */}
+              <Link to="/my-reviews" className="custom-dropdown-item text-decoration-none d-block" onClick={() => setProfileMenuOpen(false)}>
+                내 후기 보기
               </Link>
-              <Link 
-                to="/match-requests" 
-                className="custom-dropdown-item text-decoration-none d-block d-flex justify-content-between align-items-center" 
+              <Link
+                to="/match-requests"
+                className="custom-dropdown-item text-decoration-none d-block d-flex justify-content-between align-items-center"
                 onClick={() => {
                   setProfileMenuOpen(false);
-                  clearUnreadMessages(); // 활동 페이지로 이동 시, 알림 숫자를 0으로 초기화합니다.
+                  clearUnreadMessages();
                 }}
               >
                 <span>활동</span>
@@ -154,13 +153,13 @@ const AppLayout = ({ children }) => {
                   <NavItem><NavLink tag={Link} to="/auth" onClick={handleMenuClick} className="offcanvas-nav-link-login">로그인이 필요합니다</NavLink></NavItem>
                 ) : (
                   <NavItem>
-                    <NavLink 
-                      tag={Link} 
+                    <NavLink
+                      tag={Link}
                       to="/match-requests"
                       onClick={() => {
                           handleMenuClick();
                           clearUnreadMessages();
-                      }} 
+                      }}
                       className="offcanvas-nav-link d-flex justify-content-between align-items-center"
                     >
                       <span>📊 활동</span>
@@ -174,11 +173,11 @@ const AppLayout = ({ children }) => {
                 <NavItem><NavLink tag={Link} to="/matching" onClick={handleMenuClick} className="offcanvas-nav-link">🤝 매칭하기</NavLink></NavItem>
                 <NavItem><NavLink tag={Link} to="/schedule" onClick={handleMenuClick} className="offcanvas-nav-link">📅 일정 만들기</NavLink></NavItem>
                 <NavItem><NavLink tag={Link} to="/board" onClick={handleMenuClick} className="offcanvas-nav-link">📋 게시판</NavLink></NavItem>
-                <NavItem><NavLink tag={Link} to="/review-entry" onClick={handleMenuClick} className="offcanvas-nav-link">✍️ 후기 남기기</NavLink></NavItem>
+               <NavItem><NavLink tag={Link} to="/my-reviews" onClick={handleMenuClick} className="offcanvas-nav-link">✍️ 내 후기 보기</NavLink></NavItem>
             </Nav>
         </OffcanvasBody>
       </Offcanvas>
-      
+
       <div style={{ position: 'relative', zIndex: 1 }}>
         {children}
       </div>

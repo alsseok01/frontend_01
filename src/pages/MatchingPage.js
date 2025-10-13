@@ -1,3 +1,5 @@
+// src/pages/MatchingPage.js
+
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import {
@@ -200,13 +202,18 @@ const FilterModal = ({ isOpen, toggle, onApply, initialFilters }) => {
     );
 };
 
-// ✅ [수정] ProfileModal 컴포넌트를 아래와 같이 변경합니다.
+// ✅ [수정] ProfileModal 컴포넌트
 const ProfileModal = ({ isOpen, toggle, schedule }) => {
     if (!schedule || !schedule.user) return null;
 
     const userPreferences = schedule.user.preferences ?
         Object.keys(schedule.user.preferences).filter(key => schedule.user.preferences[key]) :
         [];
+    
+    // 평점 표시 로직 추가
+    const displayRating = schedule.user.reviewCount >= 5
+        ? parseFloat(schedule.user.averageRating).toFixed(1)
+        : 'N/A';
 
     return (
         <Modal isOpen={isOpen} toggle={toggle} centered>
@@ -247,7 +254,8 @@ const ProfileModal = ({ isOpen, toggle, schedule }) => {
                     <Col>
                         <h5>평점</h5>
                         <div className="d-flex align-items-center justify-content-center mt-3" style={{ minHeight: '50px' }}>
-                            <h4 className="font-weight-bold mb-0">N/A</h4>
+                            {/* ✅ [수정] N/A 대신 displayRating 변수를 사용하도록 변경 */}
+                            <h4 className="font-weight-bold mb-0">{displayRating}</h4>
                         </div>
                     </Col>
                 </Row>
@@ -259,7 +267,7 @@ const ProfileModal = ({ isOpen, toggle, schedule }) => {
     );
 }
 
-// --- 메인 페이지 컴포넌트 ---
+// --- 메인 페이지 컴포넌트 (변경 없음) ---
 const MatchingPage = () => {
   const { user, isAuthenticated, onNavigate } = useAuth();
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 992);
@@ -295,38 +303,31 @@ const MatchingPage = () => {
             });
 
             const allSchedules = response.data;
-
             const today = new Date();
             const limitDate = new Date();
             limitDate.setDate(today.getDate() + 21);
-
             const filtered = allSchedules.filter((s) => {
                 const dateObj = new Date(s.date);
                 return (
                 dateObj >= new Date(today.toDateString()) && dateObj <= limitDate
                 );
             });
-
             setSchedules(filtered);
             setOriginalSchedules(filtered);
-
         } catch (error) {
             console.error("매칭 일정을 불러오는데 실패했습니다:", error);
             setSchedules([]);
             setOriginalSchedules([]);
         }
     };
-
     fetchAllSchedules();
 
     const handleResize = () => setIsDesktop(window.innerWidth >= 992);
     window.addEventListener('resize', handleResize);
-
     navigator.geolocation.getCurrentPosition(
       (position) => { setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }); },
       () => { setUserLocation({ lat: 37.4980, lng: 127.0276 }); }
     );
-    
     return () => window.removeEventListener('resize', handleResize);
   }, [isAuthenticated]);
 
@@ -338,9 +339,7 @@ const MatchingPage = () => {
   const handleApplyFilter = (filters) => {
     setAppliedFilters(filters);
     const { food, distance } = filters;
-    
      let tempSchedules = originalSchedules;
-
     const activeFoodFilters = Object.keys(food).filter(key => food[key]);
     if (activeFoodFilters.length > 0) {
         tempSchedules = tempSchedules.filter(s => activeFoodFilters.includes(s.placeCategory));
@@ -362,23 +361,18 @@ const MatchingPage = () => {
         alert('자신이 만든 일정에는 매칭을 신청할 수 없습니다.');
         return;
     }
-
     if (!window.confirm(`'${selectedSchedule.user.name}'님의 '${selectedSchedule.placeName}' 일정에 매칭을 신청하시겠습니까?`)) {
         return;
     }
-
     try {
         const token = localStorage.getItem('token');
         const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-        
         const response = await axios.post(
             `${API_URL}/api/matches`, 
             { scheduleId: selectedSchedule.id },
             { headers: { 'Authorization': `Bearer ${token}` } }
         );
-
         alert(response.data);
-
     } catch (error) {
         console.error("매칭 신청 실패:", error);
         if (error.response && error.response.data) {
@@ -395,16 +389,13 @@ const MatchingPage = () => {
         onNavigate('login');
         return;
     }
-    
     try {
         const token = localStorage.getItem('token');
         const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-        
         const response = await axios.get(`${API_URL}/api/schedules/random`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const randomSchedule = response.data;
-
         if (window.confirm(`[랜덤 매칭]\n\n'${randomSchedule.user.name}'님의 '${randomSchedule.placeName}'(${randomSchedule.date}) 일정에 매칭을 신청하시겠습니까?`)) {
             const matchResponse = await axios.post(
                 `${API_URL}/api/matches`,
@@ -479,16 +470,13 @@ const MatchingPage = () => {
           </div>
         )}
       </div>
-
       {renderContent()}
-      
       <FilterModal 
         isOpen={isFilterModalOpen} 
         toggle={() => setFilterModalOpen(false)} 
         onApply={handleApplyFilter} 
         initialFilters={appliedFilters}
       />
-      
       <ProfileModal 
         isOpen={isProfileModalOpen}
         toggle={() => setProfileModalOpen(false)}
