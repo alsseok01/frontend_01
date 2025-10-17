@@ -276,6 +276,7 @@ const deleteMatch = async (matchId) => {
             alert(response.data);
             fetchMatchRequests(); // 목록 새로고침
             fetchSentMatchRequests(); // 보낸 목록도 새로고침
+            fetchMySchedules();
         } catch (error) {
             alert(error.response?.data || '매칭 확정 중 오류가 발생했습니다.');
         }

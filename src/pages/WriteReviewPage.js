@@ -9,7 +9,7 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const WriteReviewPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { user, fetchMatchRequests, fetchSentMatchRequests } = useAuth();
+    const { user, fetchMatchRequests, fetchSentMatchRequests, fetchMySchedules } = useAuth();
     const { opponent, matchId } = location.state || {};
 
     const [rating, setRating] = useState(3);
@@ -37,6 +37,7 @@ const WriteReviewPage = () => {
 
             await fetchMatchRequests();
             await fetchSentMatchRequests();
+            await fetchMySchedules();
 
             navigate('/match-requests');
 

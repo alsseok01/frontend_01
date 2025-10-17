@@ -4,6 +4,7 @@ import homePageBg from '../images/HomePage.png';
 import '../css/HomePage.css';
 import { useAuth } from '../contexts/AuthContext'; 
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -148,8 +149,8 @@ const HomePage = ({  }) => {
               <Container>
                 <Row className="justify-content-center">
                   <Col md="8" lg="6" className="d-flex justify-content-center">
-                    <Button size="lg" className="btn-custom btn-matching mx-2" onClick={() => onNavigate('matching')}>매칭하기</Button>
-                    <Button size="lg" className="btn-custom btn-schedule mx-2" onClick={() => onNavigate('schedule')}>일정 만들기</Button>
+                    <Button size="lg" className="btn-custom btn-matching mx-2" tag={Link} to="/matching">매칭하기</Button>
+                    <Button size="lg" className="btn-custom btn-schedule mx-2" tag={Link} to="/schedule">일정 만들기</Button>
                   </Col>
                 </Row>
               </Container>
@@ -170,8 +171,8 @@ const HomePage = ({  }) => {
               <Container>
                 <Row className="justify-content-center">
                   <Col xs="12" className="d-flex justify-content-center"  style={{ marginTop: "380px" }}>
-                    <Button size="lg" className="btn-custom btn-matching mx-2" onClick={() => onNavigate('matching')}>매칭하기</Button>
-                    <Button size="lg" className="btn-custom btn-schedule mx-2" onClick={() => onNavigate('schedule')}>일정 만들기</Button>
+                    <Button size="lg" className="btn-custom btn-matching mx-2" tag={Link} to="/matching">매칭하기</Button>
+                    <Button size="lg" className="btn-custom btn-schedule mx-2" tag={Link} to="/schedule">일정 만들기</Button>
                   </Col>
                 </Row>
               </Container>
