@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'; // useMemo 추가
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, CardBody, CardHeader, ListGroup, ListGroupItem, Container, Row, Col } from 'reactstrap';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,7 +13,6 @@ const MatchRequestsPage = () => {
     confirmMatch,
     sentMatchRequests,
     fetchSentMatchRequests,
-    deleteMatch, // deleteMatch는 PENDING 상태 취소를 위해 남겨둘 수 있습니다 (현재는 사용 안함)
     user,
     refreshUser
   } = useAuth();
@@ -26,11 +25,9 @@ const MatchRequestsPage = () => {
     fetchSentMatchRequests();
   }, [fetchMatchRequests, fetchSentMatchRequests, refreshUser]);
 
-  // ✅ [추가] 완료된 항목을 제외한 '받은 신청' 목록을 필터링합니다.
   const visibleMatchRequests = useMemo(() => {
     return matchRequests.filter(m => {
         const status = String(m.status || '').toUpperCase();
-        // 거절되었거나, 내가 호스트로서 후기를 이미 작성했다면 목록에서 숨깁니다.
         if (status === 'REJECTED' || (status === 'CONFIRMED' && m.hostReviewed)) {
             return false;
         }
@@ -38,18 +35,15 @@ const MatchRequestsPage = () => {
     });
   }, [matchRequests]);
 
-  // ✅ [추가] 완료된 항목을 제외한 '보낸 신청' 목록을 필터링합니다.
   const visibleSentMatchRequests = useMemo(() => {
     return sentMatchRequests.filter(m => {
         const status = String(m.status || '').toUpperCase();
-        // 거절되었거나, 내가 신청자로서 후기를 이미 작성했다면 목록에서 숨깁니다.
         if (status === 'REJECTED' || (status === 'CONFIRMED' && m.requesterReviewed)) {
             return false;
         }
         return true;
     });
   }, [sentMatchRequests]);
-
 
   const handleWriteReviewClick = (match) => {
     const isRequester = user.id === match.requester.id;
@@ -89,8 +83,8 @@ const MatchRequestsPage = () => {
       match.requester?.id === user.id ? match.schedule?.member : match.requester;
     navigate(`/chat/${match.id}`, { state: { opponent } });
   };
-
-  // ✅ [수정] '내가 보낸 신청' 목록 렌더링 함수 - 더 이상 'X' 버튼이 필요 없습니다.
+  
+  // ✅ [수정] '내가 보낸 신청' 목록에서 '확정됨' 상태일 때 채팅 버튼을 추가합니다.
   const renderSentRequestStatus = (request) => {
     const status = String(request.status || '').toUpperCase();
     switch (status) {
@@ -108,18 +102,17 @@ const MatchRequestsPage = () => {
           return (
             <div className="request-status">
               <span style={{ color: '#17a2b8', fontWeight: 'bold' }}>확정됨</span>
+              <Button onClick={() => handleChat(request)} color="primary" size="sm" className="me-2">채팅</Button>
               <Button onClick={() => handleWriteReviewClick(request)} color="info" size="sm">
                 후기 작성
               </Button>
             </div>
           );
         }
-        // 후기 작성 완료 항목은 이미 필터링되어 이 코드는 실행되지 않습니다.
         return null;
       case 'REJECTED':
-         // 거절된 항목은 이미 필터링되어 이 코드는 실행되지 않습니다.
         return null; 
-      default: // PENDING
+      default:
         return <span>대기중</span>;
     }
   };
@@ -132,37 +125,30 @@ const MatchRequestsPage = () => {
     <>
       <Container className="mt-4" style={{ paddingTop: '60px' }}>
         <Row className="text-center mb-4">
-          <Col xs="4" className="pe-2">
-              <Card className="h-100 shadow-sm">
-                  <CardBody className="p-2 p-md-3">
-                      <h6 className="text-muted" style={{fontSize: '0.8rem'}}>보낸 신청</h6>
-                      <h4 className="font-weight-bold mb-0">{visibleSentMatchRequests.length}</h4>
-                  </CardBody>
-              </Card>
-          </Col>
-          <Col xs="4" className="px-1">
-              <Card className="h-100 shadow-sm">
-                  <CardBody className="p-2 p-md-3">
-                      <h6 className="text-muted" style={{fontSize: '0.8rem'}}>받은 신청</h6>
-                      <h4 className="font-weight-bold mb-0">{visibleMatchRequests.length}</h4>
-                  </CardBody>
-              </Card>
-          </Col>
-          <Col xs="4" className="ps-2">
-              <Card className="h-100 shadow-sm">
-                  <CardBody className="p-2 p-md-3">
-                      <h6 className="text-muted" style={{fontSize: '0.8rem'}}>내 평점</h6>
-                      <h4 className="font-weight-bold mb-0">{displayRating}</h4>
-                  </CardBody>
-              </Card>
-          </Col>
+            <Col xs="4" className="pe-2">
+                <Card className="h-100 shadow-sm"><CardBody className="p-2 p-md-3">
+                    <h6 className="text-muted" style={{fontSize: '0.8rem'}}>보낸 신청</h6>
+                    <h4 className="font-weight-bold mb-0">{visibleSentMatchRequests.length}</h4>
+                </CardBody></Card>
+            </Col>
+            <Col xs="4" className="px-1">
+                <Card className="h-100 shadow-sm"><CardBody className="p-2 p-md-3">
+                    <h6 className="text-muted" style={{fontSize: '0.8rem'}}>받은 신청</h6>
+                    <h4 className="font-weight-bold mb-0">{visibleMatchRequests.length}</h4>
+                </CardBody></Card>
+            </Col>
+            <Col xs="4" className="ps-2">
+                <Card className="h-100 shadow-sm"><CardBody className="p-2 p-md-3">
+                    <h6 className="text-muted" style={{fontSize: '0.8rem'}}>내 평점</h6>
+                    <h4 className="font-weight-bold mb-0">{displayRating}</h4>
+                </CardBody></Card>
+            </Col>
         </Row>
 
         <Card className="mb-4">
           <CardHeader><h4>받은 매칭 신청</h4></CardHeader>
           <CardBody>
             <ListGroup flush>
-              {/* ✅ [수정] 필터링된 'visibleMatchRequests' 배열을 사용합니다. */}
               {visibleMatchRequests.length > 0 ? (
                 visibleMatchRequests.map(m => {
                   const status = String(m.status || '').toUpperCase();
@@ -182,10 +168,14 @@ const MatchRequestsPage = () => {
                           <Button color="primary" size="sm" onClick={() => handleChat(m)} className="me-2">채팅</Button>
                           <Button color="success" size="sm" onClick={() => onConfirm(m.id)}>확정하기</Button>
                         </div>
+                      // ✅ [수정] '받은 신청' 목록에서 '확정됨' 상태일 때 채팅 버튼을 추가합니다.
                       ) : status === 'CONFIRMED' ? (
                         (m.schedule.member.id === user.id && !m.hostReviewed) ? (
-                            <Button color="info" size="sm" onClick={() => handleWriteReviewClick(m)}>후기 작성</Button>
-                        ) : null // 후기 작성 완료 항목은 이미 필터링됨
+                            <div>
+                                <Button color="primary" size="sm" onClick={() => handleChat(m)} className="me-2">채팅</Button>
+                                <Button color="info" size="sm" onClick={() => handleWriteReviewClick(m)}>후기 작성</Button>
+                            </div>
+                        ) : null
                       ) : null}
                     </ListGroupItem>
                   );
@@ -201,7 +191,6 @@ const MatchRequestsPage = () => {
           <CardHeader><h4>내가 보낸 신청</h4></CardHeader>
           <CardBody>
             <ListGroup flush>
-              {/* ✅ [수정] 필터링된 'visibleSentMatchRequests' 배열을 사용합니다. */}
               {visibleSentMatchRequests.length > 0 ? (
                 visibleSentMatchRequests.map(m => (
                   <ListGroupItem key={m.id} className="d-flex justify-content-between align-items-center">
