@@ -67,13 +67,8 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
       setNewEventText(pendingEvent.text);
       setAddModalOpen(true);
     } else {
-      const dayEvents = events[dateStr] || [];
-      if (dayEvents.length > 0) {
-        setViewModalOpen(true);
-      } else {
-        setNewEventText('');
-        setAddModalOpen(true);
-      }
+      setNewEventText('');
+      setAddModalOpen(true);
     }
   };
 
@@ -91,18 +86,25 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
             participants: numberOfParticipants
         };
         
-        // 1. 서버에 생성 요청을 보내고, 생성된 일정 정보를 응답으로 받습니다.
         const response = await axios.post(`${API_URL}/api/schedules`, newScheduleData, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        const savedSchedule = response.data; // 서버가 반환한 새 일정
+        const savedSchedule = response.data; 
 
-        // 2. 전체 목록을 다시 불러오는 대신, 받은 새 일정만 기존 상태에 추가합니다.
+        const newEventForState = {
+          id: savedSchedule.id,
+          text: savedSchedule.text,
+          time: savedSchedule.time,
+          participants: savedSchedule.participants,
+          currentParticipants: savedSchedule.currentParticipants,
+          placeCategory: savedSchedule.placeCategory, 
+        };
+
         setEvents(prevEvents => {
             const dateEvents = prevEvents[savedSchedule.date] || [];
             return {
                 ...prevEvents,
-                [savedSchedule.date]: [...dateEvents, savedSchedule]
+                [savedSchedule.date]: [...dateEvents, newEventForState] // 
             };
         });
 
@@ -115,7 +117,6 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
     }
   };
 
-  // --- 수정 및 삭제 기능은 기존 로직을 그대로 유지합니다 ---
   const editEvent = () => {
     if (!isAuthenticated) { return; }
     if (editedEventText.trim() === '') return;
@@ -149,20 +150,18 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
   const deleteEvent = async () => {
     if (!isAuthenticated || !selectedEvent) return;
 
-    // 사용자에게 다시 한번 확인
     if (window.confirm("정말로 이 일정을 삭제하시겠습니까?")) {
         try {
             const token = localStorage.getItem('token');
             const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
             
-            // DELETE 요청을 보내 DB에서 일정을 삭제합니다.
             await axios.delete(`${API_URL}/api/schedules/${selectedEvent.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
             alert("일정이 삭제되었습니다.");
-            setEditModalOpen(false); // 수정/삭제 모달을 닫습니다.
-            await fetchMySchedules(); // 삭제 후, 최신 일정 목록을 서버에서 다시 불러와 화면을 갱신합니다.
+            setEditModalOpen(false); 
+            await fetchMySchedules(); 
 
         } catch (error) {
             console.error("일정 삭제 실패:", error);
@@ -209,22 +208,25 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
           <strong style={{ color: isDisabled ? '#706c7dff' : '#000' }}>{day}</strong>
           <div className="d-flex flex-wrap mt-1">
             {dayEvents.map((event) => (
-                <Badge
-                    key={event.id}
-                    style={{
-                      backgroundColor:
-                        categoryColors[event.placeCategory] || categoryColors['기타'],
-                      marginRight: '4px',
-                      marginBottom: '4px',
-                      cursor: 'pointer',
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!isDisabled) handleEventClick(event, dateStr);
-                    }}
-                  >
-                    {`${event.currentParticipants || 1}/${event.participants}`}
-                </Badge>
+                // ✅ Reactstrap Badge의 기본 color(secondary)를 피하기 위해 순수 span.badge 사용
+                <span
+                  key={event.id}
+                  className="badge"
+                  style={{
+                    backgroundColor:
+                      categoryColors[event.placeCategory] || categoryColors['기타'],
+                    marginRight: '4px',
+                    marginBottom: '4px',
+                    cursor: 'pointer',
+                    color: '#fff'
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isDisabled) handleEventClick(event, dateStr);
+                  }}
+                >
+                  {`${event.currentParticipants || 1}/${event.participants}`}
+                </span>
               )
             )}
           </div>
@@ -324,7 +326,16 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
             {(events[selectedDate] || []).map(event => (
               <ListGroupItem key={event.id} className="d-flex justify-content-between align-items-center">
                 <div>
-                  <Badge style={{ backgroundColor: event.color, marginRight: '10px' }}>&nbsp;</Badge>
+                  {/* ✅ 색상칩도 span.badge로 변경하여 bg-secondary 회피 */}
+                  <span
+                    className="badge"
+                    style={{
+                      backgroundColor: categoryColors[event.placeCategory] || categoryColors['기타'],
+                      marginRight: '10px'
+                    }}
+                  >
+                    &nbsp;
+                  </span>
                   {event.text}
                 </div>
                 <Badge color="dark" pill>{`${event.currentParticipants || 1} / ${event.participants} 명`}</Badge>
