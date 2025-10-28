@@ -76,7 +76,6 @@ const AppLayout = ({ children }) => {
               <Link to="/profile" className="custom-dropdown-item text-decoration-none d-block" onClick={() => setProfileMenuOpen(false)}>
                 사용자 정보
               </Link>
-              {/* ✅ [수정] '후기 남기기' 링크를 '활동' 페이지로 변경 */}
               <Link to="/my-reviews" className="custom-dropdown-item text-decoration-none d-block" onClick={() => setProfileMenuOpen(false)}>
                 내 후기 보기
               </Link>
@@ -123,7 +122,8 @@ const AppLayout = ({ children }) => {
           <Nav className="mx-auto" navbar>
             <NavItem><NavLink tag={Link} to="/matching" className="font-weight-bold">매칭하기</NavLink></NavItem>
             <NavItem><NavLink tag={Link} to="/schedule" className="font-weight-bold">일정 만들기</NavLink></NavItem>
-            <NavItem><NavLink tag={Link} to="/board" className="font-weight-bold">게시판</NavLink></NavItem>
+            <NavItem><NavLink tag={Link} to="/restaurant-rec" className="font-weight-bold">맛집 추천</NavLink></NavItem>
+            <NavItem><NavLink tag={Link} to="/board" className="font-weight-bold">맛집 소개</NavLink></NavItem>
           </Nav>
           {renderNavButtons()}
         </Container>
@@ -172,7 +172,8 @@ const AppLayout = ({ children }) => {
                 <hr/>
                 <NavItem><NavLink tag={Link} to="/matching" onClick={handleMenuClick} className="offcanvas-nav-link">🤝 매칭하기</NavLink></NavItem>
                 <NavItem><NavLink tag={Link} to="/schedule" onClick={handleMenuClick} className="offcanvas-nav-link">📅 일정 만들기</NavLink></NavItem>
-                <NavItem><NavLink tag={Link} to="/board" onClick={handleMenuClick} className="offcanvas-nav-link">📋 게시판</NavLink></NavItem>
+                <NavItem><NavLink tag={Link} to="/restaurant-rec" onClick={handleMenuClick} className="offcanvas-nav-link">📍 맛집 추천</NavLink></NavItem>
+                <NavItem><NavLink tag={Link} to="/board" onClick={handleMenuClick} className="offcanvas-nav-link">📋 맛집 소개</NavLink></NavItem>
                <NavItem><NavLink tag={Link} to="/my-reviews" onClick={handleMenuClick} className="offcanvas-nav-link">✍️ 내 후기 보기</NavLink></NavItem>
             </Nav>
         </OffcanvasBody>

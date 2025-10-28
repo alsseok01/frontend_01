@@ -1,0 +1,124 @@
+/* src/css/RestaurantRecPage.css */
+
+/* --- 애니메이션 정의 (HomePage.css와 동일) --- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- 애니메이션 적용 클래스 --- */
+/* 제목 애니메이션만 남김 */
+.fade-in-up-text {
+  animation: fadeInUp 1s ease-out 0.2s forwards;
+  opacity: 0;
+}
+/* ❌ 지도와 캐러셀 애니메이션 클래스 제거됨 */
+/* .fade-in-up-map { ... } */
+/* .fade-in-up-carousel { ... } */
+
+/* --- 레이아웃 스타일 --- */
+.rec-page-container {
+  padding-top: 80px; /* ✅ 모바일 네비게이션 높이(약 60px) + 추가 여백(20px) */
+  padding-bottom: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+/* 데스크탑에서는 상단 네비게이션 높이가 다르므로 패딩 조정 */
+@media (min-width: 992px) {
+  .rec-page-container {
+    padding-top: 20px;
+  }
+}
+
+#map {
+  width: 100%;
+  height: 400px;
+  border-radius: 0.25rem;
+}
+
+.map-card {
+  border: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.carousel-container {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  z-index: 10;
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+  /* width와 transform은 JS에서 인라인 스타일로 설정됩니다. */
+}
+
+.carousel-card-wrapper {
+  /* width는 JS에서 인라인 스타일로 설정됩니다. */
+  flex-shrink: 0;
+  padding: 0 10px;
+  box-sizing: border-box;
+  min-height: 250px;
+  display: flex;
+  align-items: center;
+}
+
+.carousel-card {
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  width: 100%;
+  min-height: 230px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.carousel-card .card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding: 1.5rem;
+}
+
+.carousel-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.carousel-nav-btn.prev {
+  left: -20px;
+}
+
+.carousel-nav-btn.next {
+  right: -20px;
+}
+
+@media (max-width: 768px) {
+  .carousel-nav-btn.prev {
+    left: 0px;
+  }
+  .carousel-nav-btn.next {
+    right: 0px;
+  }
+}
+
+.modal-body-scrollable {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+

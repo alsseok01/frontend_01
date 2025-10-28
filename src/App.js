@@ -1,5 +1,3 @@
-// src/App.js
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './components/AppLayout';
@@ -7,7 +5,7 @@ import HomePage from './pages/HomePage';
 import MatchingPage from './pages/MatchingPage';
 import SchedulePage from './pages/SchedulePage';
 import BoardPage from './pages/BoardPage';
-import ReviewsPage from './pages/ReviewsPage';
+import RestaurantRecPage from './pages/RestaurantRecPage';
 import ProfilePage from './pages/ProfilePage';
 import ChatPage from './pages/ChatPage';
 import MatchRequestsPage from './pages/MatchRequestsPage';
@@ -45,7 +43,6 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<HomePage />} />
       
-      {/* ✅ [수정] 아래 라우트 규칙을 수정하여 무한 리디렉션을 방지합니다. */}
        <Route 
         path="/auth" 
         element={isAuthenticated ? <Navigate to="/" replace /> : <AuthPage />} 
@@ -60,7 +57,7 @@ const AppRoutes = () => {
       <Route path="/matching" element={isAuthenticated ? <MatchingPage /> : <Navigate to="/auth" />} />
       <Route path="/schedule" element={isAuthenticated ? <SchedulePage /> : <Navigate to="/auth" />} />
       <Route path="/board" element={isAuthenticated ? <BoardPage /> : <Navigate to="/auth" />} />
-      <Route path="/reviews" element={isAuthenticated ? <ReviewsPage /> : <Navigate to="/auth" />} />
+      <Route path="/restaurant-rec" element={isAuthenticated ? <RestaurantRecPage /> : <Navigate to="/auth" />} />
       <Route path="/profile" element={isAuthenticated ? <ProfilePage /> : <Navigate to="/auth" />} />
       <Route path="/match-requests" element={isAuthenticated ? <MatchRequestsPage /> : <Navigate to="/auth" />} />
       <Route path="/chat/:matchId" element={isAuthenticated ? <ChatPage /> : <Navigate to="/auth" />} />
