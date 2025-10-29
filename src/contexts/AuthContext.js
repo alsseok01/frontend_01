@@ -93,8 +93,31 @@ export const AuthProvider = ({ children }) => {
             const stompClient = Stomp.over(socket);
             stompClient.reconnect_delay = 5000;
             stompClient.connect({ Authorization: `Bearer ${authToken}` }, () => {
-              stompClient.subscribe(`/topic/user/${authUser.id}/notifications`, () => {
+              
+              stompClient.subscribe(`/topic/user/${authUser.id}/notifications`, (message) => {
+                
                 setUnreadMessageCount(prevCount => prevCount + 1);
+                const messageBody = message.body;
+                console.log("WebSocket 알림 수신:", messageBody);
+
+                // ✅ 3. [수정] stale closure의 함수 대신, ref에 담긴 최신 함수를 호출합니다.
+                switch (messageBody) {
+                    case "new_match_request":
+                        fetchFunctionsRef.current.fetchMatchRequests();
+                        break;
+                    case "match_accepted":
+                    case "match_rejected":
+                        fetchFunctionsRef.current.fetchSentMatchRequests();
+                        break;
+                    case "match_confirmed":
+                        fetchFunctionsRef.current.fetchMatchRequests();
+                        fetchFunctionsRef.current.fetchSentMatchRequests();
+                        break;
+                    case "new_message":
+                        break;
+                    default:
+                        console.warn("알 수 없는 알림:", messageBody);
+                }
               });
             });
             notificationClientRef.current = stompClient;
@@ -108,7 +131,7 @@ export const AuthProvider = ({ children }) => {
           setUser(response.data);
           setIsAuthenticated(true);
           fetchMySchedules();
-          connectNotifications(token, fetchedUser);
+          connectNotifications(token, fetchedUser); // ✅ connectNotifications 호출
         })
         .catch(() => {
           localStorage.removeItem('token');
@@ -125,6 +148,7 @@ export const AuthProvider = ({ children }) => {
         notificationClientRef.current = null;
       }
     };
+  // ✅ 4. [수정] 메인 useEffect의 의존성 배열에서 fetch 함수들을 제거합니다. (최초 1회 실행)
   }, [fetchMySchedules]);
 
   const processLoginData = (loginData) => {
@@ -206,7 +230,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ [최종 수정] `fetchMatchRequests` 함수
   const fetchMatchRequests = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -219,14 +242,12 @@ export const AuthProvider = ({ children }) => {
         console.warn("API 응답(받은 신청)이 배열이 아님:", response.data);
         setMatchRequests([]);
       }
-      // 🚨 setMatchRequests(response.data); <- 이전에 문제가 되었던 이 줄을 삭제했습니다.
     } catch (err) {
       console.error('받은 매칭 요청 목록을 불러오지 못했습니다.', err);
       setMatchRequests([]);
     }
   }, []);
 
-  // ✅ [최종 수정] `fetchSentMatchRequests` 함수
   const fetchSentMatchRequests = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -245,6 +266,18 @@ export const AuthProvider = ({ children }) => {
       setSentMatchRequests([]);
     }
   }, []);
+
+  const fetchFunctionsRef = useRef({
+    fetchMatchRequests,
+    fetchSentMatchRequests,
+  });
+
+  useEffect(() => {
+    fetchFunctionsRef.current = {
+      fetchMatchRequests,
+      fetchSentMatchRequests,
+    };
+  }, [fetchMatchRequests, fetchSentMatchRequests]);
 
   const deleteMatch = async (matchId) => {
     try {
