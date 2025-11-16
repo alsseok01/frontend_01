@@ -1,3 +1,5 @@
+// src/pages/MatchRequestsPage.js
+
 import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, CardBody, CardHeader, ListGroup, ListGroupItem, Container, Row, Col } from 'reactstrap';
@@ -84,14 +86,15 @@ const MatchRequestsPage = () => {
     navigate(`/chat/${match.id}`, { state: { opponent } });
   };
   
-  // ✅ [수정] '내가 보낸 신청' 목록에서 '확정됨' 상태일 때 채팅 버튼을 추가합니다.
+  // ✅ [수정] '내가 보낸 신청' 렌더링 함수
   const renderSentRequestStatus = (request) => {
     const status = String(request.status || '').toUpperCase();
     switch (status) {
       case 'ACCEPTED':
         return (
-          <div className="request-status">
-            <span className="status-accepted">수락됨</span>
+          // ✅ [수정] div에 d-flex와 align-items-center를 직접 적용하고, span에 me-2(margin) 추가
+          <div className="d-flex align-items-center">
+            <span className="status-accepted me-2">수락됨</span>
             <Button onClick={() => handleChat(request)} color="primary" size="sm">
               채팅
             </Button>
@@ -100,8 +103,9 @@ const MatchRequestsPage = () => {
       case 'CONFIRMED':
         if (request.requester.id === user.id && !request.requesterReviewed) {
           return (
-            <div className="request-status">
-              <span style={{ color: '#17a2b8', fontWeight: 'bold' }}>확정됨</span>
+            // ✅ [수정] div에 d-flex와 align-items-center를 직접 적용하고, span에 me-2(margin) 추가
+            <div className="d-flex align-items-center">
+              <span style={{ color: '#17a2b8', fontWeight: 'bold' }} className="me-2">확정됨</span>
               <Button onClick={() => handleChat(request)} color="primary" size="sm" className="me-2">채팅</Button>
               <Button onClick={() => handleWriteReviewClick(request)} color="info" size="sm">
                 후기 작성
@@ -168,7 +172,6 @@ const MatchRequestsPage = () => {
                           <Button color="primary" size="sm" onClick={() => handleChat(m)} className="me-2">채팅</Button>
                           <Button color="success" size="sm" onClick={() => onConfirm(m.id)}>확정하기</Button>
                         </div>
-                      // ✅ [수정] '받은 신청' 목록에서 '확정됨' 상태일 때 채팅 버튼을 추가합니다.
                       ) : status === 'CONFIRMED' ? (
                         (m.schedule.member.id === user.id && !m.hostReviewed) ? (
                             <div>
@@ -193,12 +196,19 @@ const MatchRequestsPage = () => {
             <ListGroup flush>
               {visibleSentMatchRequests.length > 0 ? (
                 visibleSentMatchRequests.map(m => (
-                  <ListGroupItem key={m.id} className="d-flex justify-content-between align-items-center">
+                  // ✅ [수정] ListGroupItem의 className을 변경하여 모바일/데스크탑 반응형 레이아웃 적용
+                  <ListGroupItem 
+                    key={m.id} 
+                    className="d-flex flex-column flex-md-row justify-content-md-between align-items-start align-items-md-center"
+                  >
                     <div>
                       <strong>{m.schedule?.member?.name ?? '알 수 없음'}</strong> 님의&nbsp;
                       <strong>{m.schedule?.placeName ?? ''}</strong> 일정에 신청
                     </div>
-                    {renderSentRequestStatus(m)}
+                    {/* ✅ [수정] 상태 래퍼 div를 추가하여 모바일에서 위쪽 여백(mt-2)을 줌 */}
+                    <div className="mt-2 mt-md-0">
+                      {renderSentRequestStatus(m)}
+                    </div>
                   </ListGroupItem>
                 ))
               ) : (
