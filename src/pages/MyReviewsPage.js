@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Card, CardBody, CardHeader, Spinner, Alert, Button } from 'reactstrap';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import{ getToken } from '../utils/tokenStorage';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -14,7 +15,7 @@ const MyReviewsPage = () => {
     useEffect(() => {
         const fetchMyReviews = async () => {
             try {
-                const token = localStorage.getItem('token');
+                const token = getToken();
                 const response = await axios.get(`${API_URL}/api/reviews/my`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -43,7 +44,7 @@ const MyReviewsPage = () => {
             return;
         }
         try {
-            const token = localStorage.getItem('token');
+            const token = getToken();
             await axios.delete(`${API_URL}/api/reviews/${reviewId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });

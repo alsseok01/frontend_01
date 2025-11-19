@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-// InputGroupAddon을 import 목록에서 제거합니다.
 import { Button, Card, CardBody, FormGroup, Form, Input, InputGroup, Col, Row } from 'reactstrap'; 
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-
+//const API_URL = 'https://api.tablefriends.site';
 const RegisterPage = ({ onSwitchMode }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

@@ -19,9 +19,26 @@ const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
   return dist;
 };
 
-const NearbyPlacesList = ({ places, userLocation, onPlaceClick }) => {
+const NearbyPlacesList = ({ places, userLocation, onPlaceClick, onQuickAddSchedule }) => {
     const { isAuthenticated, onNavigate } = useAuth();
     const [sortedPlaces, setSortedPlaces] = useState([]);
+
+  // Kakao category_name을 간단 라벨로 축약
+  const simplifyCategory = (categoryName) => {
+    if (!categoryName) return '기타';
+    try {
+      if (categoryName.includes('한식')) return '한식';
+      if (categoryName.includes('중식')) return '중식';
+      if (categoryName.includes('일식')) return '일식';
+      if (categoryName.includes('양식') || categoryName.includes('이탈리안')) return '양식';
+      if (categoryName.includes('분식')) return '분식';
+      if (categoryName.includes('카페') || categoryName.includes('커피')) return '카페';
+      const segs = categoryName.split('>').map((s) => s.trim());
+      return segs[segs.length - 1] || '기타';
+    } catch {
+      return '기타';
+    }
+  };
 
   useEffect(() => {
     if (places.length > 0 && userLocation) {
@@ -42,7 +59,12 @@ const NearbyPlacesList = ({ places, userLocation, onPlaceClick }) => {
       onNavigate("login");
       return;
     }
-    onPlaceClick(place);
+    if (typeof onQuickAddSchedule === 'function') {
+      onQuickAddSchedule(place);
+    }
+    if (typeof onPlaceClick === 'function') {
+      onPlaceClick(place);
+    }
   };
 
   return (
@@ -51,19 +73,28 @@ const NearbyPlacesList = ({ places, userLocation, onPlaceClick }) => {
       <CardBody style={{ overflowY: 'auto' }}>
         {sortedPlaces.length > 0 ? (
           <ListGroup flush>
-            {sortedPlaces.map(place => (
+            {sortedPlaces.map((place) => (
               <ListGroupItem
                 key={place.id}
-                className="d-flex justify-content-between align-items-center"
+                className="d-flex align-items-center"
                 action
                 style={{ cursor: 'pointer' }}
                 onClick={() => handlePlaceClick(place)}
               >
-                <div>
-                  <strong>{place.place_name}</strong>
-                  <div className="text-muted small">{place.category_name}</div>
+                <div className="d-flex align-items-center w-100">
+                  <div className="w-100 me-2" style={{ minWidth: 0 }}>
+                    <strong className="d-block text-truncate">{place.place_name}</strong>
+                    <div className="text-muted small text-truncate">{simplifyCategory(place.category_name)}</div>
+                  </div>
+                  <Badge
+                    color="primary"
+                    pill
+                    className="ms-2 flex-shrink-0"
+                    style={{ minWidth: 56, textAlign: 'center' }}
+                  >
+                    {Math.round(place.distance)}m
+                  </Badge>
                 </div>
-                <Badge color="primary" pill>{Math.round(place.distance)}m</Badge>
               </ListGroupItem>
             ))}
           </ListGroup>
@@ -111,6 +142,28 @@ const SchedulePage = () => {
     }
   }, [isDesktop]);
 
+  // 목록 선택 시 지도 단계를 생략하고 바로 일정 추가 흐름으로 진입
+  const normalizeCategory = useCallback((categoryName) => {
+    if (!categoryName) return '기타';
+    try {
+      if (categoryName.includes('한식')) return '한식';
+      if (categoryName.includes('중식')) return '중식';
+      if (categoryName.includes('일식')) return '일식';
+      if (categoryName.includes('양식') || categoryName.includes('이탈리안')) return '양식';
+      if (categoryName.includes('분식')) return '분식';
+      if (categoryName.includes('카페') || categoryName.includes('커피')) return '카페';
+      const segs = categoryName.split('>').map((s) => s.trim());
+      return segs[segs.length - 1] || '기타';
+    } catch {
+      return '기타';
+    }
+  }, []);
+
+  const handleQuickAddFromPlace = useCallback((place) => {
+    const category = normalizeCategory(place.category_name);
+    handleMapPinClick({ poi: { name: place.place_name, category } });
+  }, [normalizeCategory, handleMapPinClick]);
+
   return (
     <>
       <div className="d-flex flex-column text-white text-center position-relative" style={{ paddingTop: isDesktop ? '0' : '80px' }}>
@@ -150,6 +203,7 @@ const SchedulePage = () => {
                   places={nearbyPlaces}
                   userLocation={userLocation}
                   onPlaceClick={setSelectedPlace}
+                  onQuickAddSchedule={handleQuickAddFromPlace}
                 />
               </Col>
               <Col xs={12} lg={8} className="mb-4 order-lg-1">
@@ -189,7 +243,7 @@ const SchedulePage = () => {
                     </CardBody></Card>
                 </Col>
                 <Col xs={12} className="mb-4">
-                    <NearbyPlacesList places={nearbyPlaces} userLocation={userLocation} onPlaceClick={setSelectedPlace} />
+                    <NearbyPlacesList places={nearbyPlaces} userLocation={userLocation} onPlaceClick={setSelectedPlace} onQuickAddSchedule={handleQuickAddFromPlace} />
                 </Col>
                 {/* ✅ 4. [추가] 캘린더 컴포넌트를 담는 Col에 ref를 연결 */}
                 <Col xs={12} className="mb-4" ref={calendarRef}>

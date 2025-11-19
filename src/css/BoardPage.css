@@ -67,3 +67,11 @@
     cursor: pointer;
     font-weight: bold;
 }
+
+.post-content-body img,
+.ql-editor img {
+    max-width: 100%;
+    height: auto;
+    display: block; 
+    margin: 10px 0; 
+}

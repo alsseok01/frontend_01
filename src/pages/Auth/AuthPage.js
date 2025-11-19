@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Container, Row, Col } from 'reactstrap';
 import LoginPage from './Login';
 import RegisterPage from './Register';
@@ -9,14 +10,19 @@ import ProfileSetupPage from '../ProfileSetupPage';
 import '../../css/Auth.css';
 
 const AuthPage = ({ onLogin, onNavigate, onSetupComplete, initialMode }) => {
+  const location = useLocation();
   const [authMode, setAuthMode] = useState(initialMode || 'login');
   const [animationClass, setAnimationClass] = useState('animate-bounce-in');
 
   useEffect(() => {
-    if (initialMode && initialMode !== authMode) {
-      handleSwitchMode(initialMode);
+    const locMode = location?.state?.mode;
+    const nextMode = initialMode || locMode;
+    if (nextMode && nextMode !== authMode) {
+      handleSwitchMode(nextMode);
+    } else if (!nextMode && authMode !== 'login') {
+      handleSwitchMode('login');
     }
-  }, [initialMode]);
+  }, [initialMode, location]);
 
   const handleSwitchMode = (newMode) => {
     setAnimationClass('animate-bounce-out');

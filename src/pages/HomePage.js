@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, Container, Row, Col,  Card, CardBody } from 'reactstrap';
 import homePageBg from '../images/HomePage.png';
+import defaultAvatar from '../images/user.png';
 import '../css/HomePage.css';
 import { useAuth } from '../contexts/AuthContext'; 
 import axios from 'axios';
@@ -230,7 +231,7 @@ const HomePage = ({  }) => {
                       <Card className="h-100 shadow-sm">
                         <CardBody className="d-flex flex-column">
                           <div className="d-flex align-items-center mb-3">
-                            <img src={review.reviewerProfileImage || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'} alt={review.reviewerName} className="rounded-circle" style={{width: '50px', height: '50px', marginRight: '1rem', objectFit: 'cover'}}/>
+                            <img src={review.reviewerProfileImage || defaultAvatar} alt={review.reviewerName} className="rounded-circle" style={{width: '50px', height: '50px', marginRight: '1rem', objectFit: 'cover'}}/>
                             <div>
                               <h5 className="mb-0 font-weight-bold">{review.reviewerName}</h5>
                               {renderStars(review.rating)}

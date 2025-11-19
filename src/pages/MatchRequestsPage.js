@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Card, CardBody, CardHeader, ListGroup, ListGroupItem, Container, Row, Col } from 'reactstrap';
+import { Button, Card, CardBody, CardHeader, ListGroup, ListGroupItem, Container, Row, Col, Badge } from 'reactstrap';
 import { useAuth } from '../contexts/AuthContext';
 import '../css/BoardPage.css';
 
@@ -16,7 +16,8 @@ const MatchRequestsPage = () => {
     sentMatchRequests,
     fetchSentMatchRequests,
     user,
-    refreshUser
+    refreshUser,
+    unreadMatches
   } = useAuth();
 
   const navigate = useNavigate();
@@ -95,18 +96,29 @@ const MatchRequestsPage = () => {
           // ✅ [수정] div에 d-flex와 align-items-center를 직접 적용하고, span에 me-2(margin) 추가
           <div className="d-flex align-items-center">
             <span className="status-accepted me-2">수락됨</span>
-            <Button onClick={() => handleChat(request)} color="primary" size="sm">
+            <Button onClick={() => handleChat(request)} color="primary" size="sm" className="position-relative">
               채팅
+              {unreadMatches.has(request.id) && (
+                <Badge color="danger" pill style={{ position: 'absolute', top: '-5px', right: '-10px', fontSize: '0.7em', zIndex: 10 }}>
+                  N
+                </Badge>
+              )}
             </Button>
           </div>
         );
       case 'CONFIRMED':
         if (request.requester.id === user.id && !request.requesterReviewed) {
           return (
-            // ✅ [수정] div에 d-flex와 align-items-center를 직접 적용하고, span에 me-2(margin) 추가
             <div className="d-flex align-items-center">
               <span style={{ color: '#17a2b8', fontWeight: 'bold' }} className="me-2">확정됨</span>
-              <Button onClick={() => handleChat(request)} color="primary" size="sm" className="me-2">채팅</Button>
+              <Button onClick={() => handleChat(request)} color="primary" size="sm" className="me-2 position-relative">
+                  채팅
+                  {unreadMatches.has(request.id) && (
+                    <Badge color="danger" pill style={{ position: 'absolute', top: '-5px', right: '-10px', fontSize: '0.7em', zIndex: 10 }}>
+                      N
+                    </Badge>
+                  )}
+              </Button>
               <Button onClick={() => handleWriteReviewClick(request)} color="info" size="sm">
                 후기 작성
               </Button>
@@ -169,13 +181,27 @@ const MatchRequestsPage = () => {
                         </div>
                       ) : status === 'ACCEPTED' ? (
                         <div>
-                          <Button color="primary" size="sm" onClick={() => handleChat(m)} className="me-2">채팅</Button>
+                          <Button color="primary" size="sm" onClick={() => handleChat(m)} className="me-2 position-relative">
+                              채팅
+                              {unreadMatches.has(m.id) && (
+                                <Badge color="danger" pill style={{ position: 'absolute', top: '-5px', right: '-10px', fontSize: '0.7em', zIndex: 10 }}>
+                                  N
+                                </Badge>
+                              )}
+                          </Button>
                           <Button color="success" size="sm" onClick={() => onConfirm(m.id)}>확정하기</Button>
                         </div>
                       ) : status === 'CONFIRMED' ? (
                         (m.schedule.member.id === user.id && !m.hostReviewed) ? (
                             <div>
-                                <Button color="primary" size="sm" onClick={() => handleChat(m)} className="me-2">채팅</Button>
+                                <Button color="primary" size="sm" onClick={() => handleChat(m)} className="me-2 position-relative">
+                                    채팅
+                                    {unreadMatches.has(m.id) && (
+                                        <Badge color="danger" pill style={{ position: 'absolute', top: '-5px', right: '-10px', fontSize: '0.7em', zIndex: 10 }}>
+                                          N
+                                        </Badge>
+                                    )}
+                                </Button>
                                 <Button color="info" size="sm" onClick={() => handleWriteReviewClick(m)}>후기 작성</Button>
                             </div>
                         ) : null

@@ -249,10 +249,6 @@ const MapComponent = ({ setScheduleModalData, activeFoodFilters, setActiveFoodFi
               <Button outline={pendingDistance !== 2000} color="secondary" size="sm" className="m-1" onClick={() => handleDistanceClick(2000)} >2km</Button>
             </div>
           </div>
-          <div className="mb-3">
-            <Label for="time-slider"><strong>시간: {pendingTime}:00</strong></Label>
-            <Input id="time-slider" type="range" min={currentHour} max="23" value={pendingTime} onChange={(e) => setPendingTime(parseInt(e.target.value))} />
-          </div>
           <hr />
           <div className="d-flex">
             <Button color="info" className="flex-grow-1 mr-1" onClick={resetFilters}>🔄 초기화</Button>

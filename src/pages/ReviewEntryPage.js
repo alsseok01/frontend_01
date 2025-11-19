@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Card, CardBody, CardHeader, Input, Button, FormGroup, Label } from 'reactstrap';
 import axios from 'axios';
+import{ getToken } from '../utils/tokenStorage';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -15,7 +16,7 @@ const ReviewEntryPage = () => {
             return;
         }
         try {
-            const token = localStorage.getItem('token');
+            const token = getToken();
             const response = await axios.post(`${API_URL}/api/reviews/verify`, { code }, {
                 headers: { Authorization: `Bearer ${token}` }
             });

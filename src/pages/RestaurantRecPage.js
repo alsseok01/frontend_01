@@ -3,6 +3,7 @@ import { Container, Card, CardBody, Button, Spinner, Alert, Modal, ModalHeader, 
 import axios from 'axios';
 import myLocationIcon from '../images/map_logo.png';
 import '../css/Restaurant.css'; 
+import { getToken }  from '../utils/tokenStorage';
 
 import DOMPurify from 'dompurify';
 import 'react-quill/dist/quill.snow.css'; 
@@ -51,7 +52,7 @@ const RestaurantRecPage = () => {
         await Promise.all([
             loadKakaoMapScript(),
             (async () => {
-                const token = localStorage.getItem('token');
+                const token = getToken();
                 const response = await axios.get(`${API_URL}/api/recommendations`, {
                   headers: { 'Authorization': `Bearer ${token}` }
                 });

@@ -27,6 +27,7 @@ import {
   InputGroup
 } from 'reactstrap';
 import { useAuth } from '../contexts/AuthContext';
+import { getToken } from '../utils/tokenStorage';
 import axios from 'axios';
 import DaumPostcode from 'react-daum-postcode';
 import '../css/BoardPage.css';
@@ -39,7 +40,7 @@ import DOMPurify from 'dompurify';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const KAKAO_MAP_APP_KEY = process.env.REACT_APP_KAKAO_MAP_KEY;
-const availableTags = ['점심', '저녁', '모임', '맛집', '일상', '주말', '중식', '양식', '카페'];
+const availableTags = ['점심', '저녁', '모임', '맛집', '일상', '주말','한식', '중식', '양식','일식', '카페'];
 
 // --- 카카오맵 스크립트 로더 (변경 없음) ---
 const loadKakaoMapScript = () => {
@@ -106,7 +107,7 @@ const BoardPage = () => {
         formData.append('image', file); // 'image'는 백엔드 @RequestParam("image")와 일치해야 함
 
         try {
-          const token = localStorage.getItem('token');
+          const token = getToken();
           const response = await axios.post(`${API_URL}/api/images/upload`, formData, {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -158,7 +159,7 @@ const BoardPage = () => {
   const fetchPosts = useCallback(async () => {
     try {
         setLoading(true);
-        const token = localStorage.getItem('token');
+        const token = getToken();
         const response = await axios.get(`${API_URL}/api/board`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -224,15 +225,22 @@ const BoardPage = () => {
     setCreateModalOpen(true);
   };
   
-  // 조회수 증가 로직 (변경 없음)
+  // 조회수 증가 로직 수정함 (김민기). 작성자 본인의 카운트 안되게 함.
   const handlePostClick = async (post) => {
     try {
-        const token = localStorage.getItem('token');
-        await axios.put(`${API_URL}/api/board/${post.id}/view`, {}, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const updatedPost = { ...post, views: post.views + 1 };
-        setPosts(prevPosts => prevPosts.map(p => p.id === post.id ? updatedPost : p));
+        const isAuthorSelfView = user?.id && post?.author?.id && (user.id === post.author.id);
+
+        let updatedPost = post;
+
+        if (!isAuthorSelfView) {
+            const token = getToken();
+            await axios.put(`${API_URL}/api/board/${post.id}/view`, {}, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            updatedPost = { ...post, views: post.views + 1 };
+            setPosts(prevPosts => prevPosts.map(p => p.id === post.id ? updatedPost : p));
+        }
+
         setSelectedPost(updatedPost);
     } catch (error) {
         console.warn("조회수 증가 실패:", error);
@@ -299,7 +307,7 @@ const BoardPage = () => {
         }
     }
 
-    const token = localStorage.getItem('token');
+    const token = getToken();
     // ✅ newPostContent는 이제 ReactQuill의 HTML 문자열입니다.
     const payload = {
         title: newPostTitle,
@@ -333,7 +341,7 @@ const BoardPage = () => {
   const handleDeletePost = async (postId) => {
     if (window.confirm('정말로 이 게시물을 삭제하시겠습니까?')) {
         try {
-            const token = localStorage.getItem('token');
+            const token = getToken();
             await axios.delete(`${API_URL}/api/board/${postId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -357,7 +365,7 @@ const BoardPage = () => {
     }
     
     try {
-        const token = localStorage.getItem('token');
+        const token = getToken();
         const response = await axios.post(`${API_URL}/api/board/${selectedPost.id}/comments`, 
             { text: newComment },
             { headers: { 'Authorization': `Bearer ${token}` } }
@@ -382,7 +390,7 @@ const BoardPage = () => {
   const handleLikePost = async () => {
     if (!selectedPost) return;
     try {
-        const token = localStorage.getItem('token');
+        const token = getToken();
         const response = await axios.post(`${API_URL}/api/board/${selectedPost.id}/like`, {}, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -545,7 +553,7 @@ const BoardPage = () => {
             </FormGroup>
             
             <FormGroup>
-                <Label for="postAddress">주소 (맛집 추천에 사용)</Label>
+                <Label for="postAddress"></Label>
                 <InputGroup>
                     <Input id="postAddress" placeholder="주소 찾기 버튼을 클릭하세요" value={newPostAddress} readOnly />
                     <Button color="secondary" onClick={() => setIsPostcodeModalOpen(true)} disabled={!isMapScriptLoaded}>

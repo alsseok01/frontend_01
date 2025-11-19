@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter, Input, Badge, ListGroup, Card, CardBody, CardHeader, ListGroupItem } from 'reactstrap';
 import { useAuth } from '../contexts/AuthContext';
+import { getToken } from '../utils/tokenStorage';
 import axios from 'axios';
 
 const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setScheduleModalData, selectedTime }) => {
-  // ✅ [수정] AuthContext에서 "내 일정 다시 불러오기" 함수를 가져옵니다.
   const { isAuthenticated, onNavigate, fetchMySchedules } = useAuth();
 
-  // --- 기존의 모든 상태와 UI 로직은 그대로 유지됩니다 ---
   const [currentDate, setCurrentDate] = useState(new Date());
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -19,6 +18,8 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
   const [newEventText, setNewEventText] = useState('');
 
   const [numberOfParticipants, setNumberOfParticipants] = useState(2);
+  const [selectedHour, setSelectedHour] = useState(() => new Date().getHours());
+  const [selectedMinute, setSelectedMinute] = useState(0);
   const [editedParticipants, setEditedParticipants] = useState(2);
   const categoryColors = {
     '한식': '#0d6efd',
@@ -43,9 +44,10 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
       }
       
       const { name, category } = scheduleModalData.poi;
-      const eventText = `${name}에서 ${selectedTime}:00 약속`;
+      const eventText = `${name}에서 약속`;
       
       setPendingEvent({ text: eventText, category: category });
+      setPendingEvent({ name, category });
       
       alert('음식점이 선택되었습니다. 달력에서 원하시는 날짜를 클릭하여 일정을 추가하세요.');
       setScheduleModalData(null);
@@ -64,7 +66,8 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
     setSelectedDate(dateStr);
 
     if (pendingEvent) {
-      setNewEventText(pendingEvent.text);
+      const defaultText = (pendingEvent.name ? `${pendingEvent.name}에서 ${pendingEvent.category} 약속` : '');
+      setNewEventText(defaultText);
       setAddModalOpen(true);
     } else {
       setNewEventText('');
@@ -73,15 +76,15 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
   };
 
   const addEvent = async () => {
-    if (!isAuthenticated || newEventText.trim() === '' || !selectedDate) return;
+    if (!isAuthenticated || !selectedDate) return;
     try {
-        const token = localStorage.getItem('token');
+        const token = getToken();
         const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
         const newScheduleData = {
             date: selectedDate,
-            time: selectedTime,
+            time: selectedHour,
             text: newEventText,
-            placeName: newEventText.split('에서')[0],
+            placeName: (pendingEvent && pendingEvent.name ? pendingEvent.name : ''),
             placeCategory: pendingEvent ? pendingEvent.category : '기타',
             participants: numberOfParticipants
         };
@@ -152,7 +155,7 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
 
     if (window.confirm("정말로 이 일정을 삭제하시겠습니까?")) {
         try {
-            const token = localStorage.getItem('token');
+            const token = getToken();
             const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
             
             await axios.delete(`${API_URL}/api/schedules/${selectedEvent.id}`, {
@@ -208,7 +211,6 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
           <strong style={{ color: isDisabled ? '#706c7dff' : '#000' }}>{day}</strong>
           <div className="d-flex flex-wrap mt-1">
             {dayEvents.map((event) => (
-                // ✅ Reactstrap Badge의 기본 color(secondary)를 피하기 위해 순수 span.badge 사용
                 <span
                   key={event.id}
                   className="badge"
@@ -260,7 +262,15 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
         <ModalHeader toggle={() => setAddModalOpen(false)}>{selectedDate} 일정 추가</ModalHeader>
         <ModalBody>
           <Input type="text" value={newEventText} onChange={(e) => setNewEventText(e.target.value)} placeholder="일정 내용 입력" />
-          
+            <div className="mt-3">
+              <label className="form-label">시간 선택</label>
+              <Input type="select" value={selectedHour} onChange={(e) => setSelectedHour(parseInt(e.target.value, 10))}>
+                {Array.from({ length: 24 }, (_, i) => (
+                  <option key={i} value={i}>{`${i}:00`}</option>
+              ))}
+            </Input>
+          </div>
+
           <div className="d-flex align-items-center justify-content-center mt-3">
             <Button 
               color="secondary" 
@@ -326,7 +336,6 @@ const CalendarComponent = ({ events = {}, setEvents, scheduleModalData, setSched
             {(events[selectedDate] || []).map(event => (
               <ListGroupItem key={event.id} className="d-flex justify-content-between align-items-center">
                 <div>
-                  {/* ✅ 색상칩도 span.badge로 변경하여 bg-secondary 회피 */}
                   <span
                     className="badge"
                     style={{

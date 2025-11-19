@@ -1,9 +1,9 @@
-// src/pages/ChatPage.js
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Stomp } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useAuth } from '../contexts/AuthContext';
+import { getToken } from '../utils/tokenStorage';
 import { Input, Button, ListGroup, ListGroupItem, Container, Card, CardBody, CardHeader } from 'reactstrap';
 import axios from 'axios'; // axios import
 
@@ -12,13 +12,19 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const ChatPage = () => {
     const { matchId } = useParams();
     const location = useLocation();
-    const { user, deleteMatch } = useAuth();
+    const { user, deleteMatch, markMatchAsRead } = useAuth();
     const opponent = location.state?.opponent;
     const navigate = useNavigate();
     const [messages, setMessages] = useState([]);
     const [message, setMessage] = useState('');
     const clientRef = useRef(null);
     const messagesEndRef = useRef(null);
+
+    useEffect(() => {
+        if (matchId) {
+            markMatchAsRead(matchId);
+        }
+    }, [matchId, markMatchAsRead]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,11 +46,10 @@ const ChatPage = () => {
         }
     };
 
-    // ✅ 1. [추가] 컴포넌트가 처음 렌더링될 때 채팅 내역을 불러옵니다.
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const token = localStorage.getItem('token');
+                const token = getToken();
                 const response = await axios.get(`${API_URL}/api/chat/${matchId}/history`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -59,8 +64,9 @@ const ChatPage = () => {
     // 웹소켓 연결 로직
     useEffect(() => {
         const connect = () => {
-            const token = localStorage.getItem('token');
+            const token = getToken()
             const socket = new SockJS(`http://localhost:8080/ws`);
+            //const socket = new SockJS(`https://api.tablefriends.site/ws`);
             const client = Stomp.over(socket);
             
             client.connect({ Authorization: `Bearer ${token}` }, () => {

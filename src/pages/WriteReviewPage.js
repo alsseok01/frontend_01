@@ -3,6 +3,7 @@ import { Container, Card, CardBody, CardHeader, Button, FormGroup, Label, Input 
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import{ getToken } from '../utils/tokenStorage';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -22,7 +23,7 @@ const WriteReviewPage = () => {
         }
 
         try {
-            const token = localStorage.getItem('token');
+            const token = getToken();
             const payload = {
                 matchId,
                 revieweeId: opponent.opponentId,

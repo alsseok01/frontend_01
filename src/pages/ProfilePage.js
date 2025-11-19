@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext'; 
 import axios from 'axios';
 import { Button, Card, CardBody, FormGroup, Form, Input, CardHeader, Label, Badge } from 'reactstrap';
+import{ getToken } from '../utils/tokenStorage';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -46,7 +47,7 @@ const ProfilePage = ({ onNavigate }) => {
 
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       if (!token) {
         alert('인증 정보가 만료되었습니다. 다시 로그인해주세요.');
         onNavigate('login');

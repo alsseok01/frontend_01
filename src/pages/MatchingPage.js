@@ -1,5 +1,3 @@
-// src/pages/MatchingPage.js
-
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import {
@@ -23,10 +21,8 @@ import {
 } from 'reactstrap';
 import { useAuth } from '../contexts/AuthContext';
 import '../css/HomePage.css';
+import { getToken } from '../utils/tokenStorage';
 
-
-
-// ✅ 카테고리 색상 매핑 (Calendar.js와 동일하게)
 const categoryColors = {
   '한식': '#0d6efd',
   '중식': '#dc3545',
@@ -37,14 +33,10 @@ const categoryColors = {
   '기타': '#6c757d',
 };
 
-// =======================
-// 달력 컴포넌트
-// =======================
 const MatchingCalendar = ({ schedules, onDateSelect, selectedDate }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [today] = useState(new Date());
 
-  // 날짜별 스케줄 그룹핑
   const schedulesByDate = useMemo(() => {
     return schedules.reduce((acc, schedule) => {
       (acc[schedule.date] = acc[schedule.date] || []).push(schedule);
@@ -361,7 +353,7 @@ const MatchingPage = () => {
         return;
       }
       try {
-        const token = localStorage.getItem('token');
+        const token = getToken();
         const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
         const response = await axios.get(`${API_URL}/api/schedules`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -443,7 +435,7 @@ const MatchingPage = () => {
       return;
     }
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
       const response = await axios.post(
         `${API_URL}/api/matches`,
@@ -468,7 +460,7 @@ const MatchingPage = () => {
       return;
     }
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
       const response = await axios.get(`${API_URL}/api/schedules/random`, {
         headers: { 'Authorization': `Bearer ${token}` }
