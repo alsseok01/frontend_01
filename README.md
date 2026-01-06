@@ -1,70 +1,27 @@
-# Getting Started with Create React App
+# 🍚 밥상친구 - frontend
+**함께하는 가치를 느끼다** 음식 취향 기반 매칭 및 맛집 공유 플랫폼
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 📝 프로젝트 소개
+밥상친구는 혼밥을 하기 싫은 사람, 2인 이상 주문 가능 음식점 등 혼자서의 식사로 인한 불편함을 해결하기 위한 플랫폼이다. 
+음식이라는 매개체로 서로의 취향이 맞는 사람들과 함께 식사를 하며 즐거운 식사 경험과 공통의 관심사를 통해 사람들간의 교류를 촉진하여 건강한 식문화와 커뮤티니를 형성하는 것을 궁극적인 목표로 가진다.
 
-## Available Scripts
-
-In the project directory, you can run:
-
-### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+# ✨ 핵심 기능
+1. 스마트 매칭 시스템
+   + 캘린더 기반 매칭: 캘린더 기반 매칭: 사용자가 원하는 날짜와 카테고리(한식, 중식 등)별로 생성된 식사 일정을 한눈에 확인 가능하다.
+   + 랜덤 매칭: 결정이 어려운 사용자를 위해 카테고리 기반 랜덤 매칭 기능을 제공한다.
+   + 필터링: 음식 종류 및 거리를 기반으로 최적의 파트너를 찾을 수 있다.
+2. 맛집 추천 및 지도 서비스
+   + Kakao Map 연동: 현재 위치 주변의 음식점을 카테고리 별로 볼 수 있으며 직관적으로 확인 가능하다.
+   + 인기 게시글 큐레이션: 사용자들의 좋아요와 조회수를 기반으로 맛집 정보를 제공한다
+3. 실시간 소통 및 커뮤니티
+   + 실시간 채팅: 매칭이 성사된 사용자 간의 약속 조율을 위한 실시간 채팅방을 제공한다
+   + 후기 추천: 사용자들의 후기를 분석하여 신뢰도가 높은 후기를 메인 화면에 노출한다.
+4. 사용자 프로필 및 매너 평점
+   + 취향 분석: 사용자의 음식 선호도를 프로필에 시각화 한다
+   + 평점 시스템: 신뢰할 수 있는 매칭을 위해 과거 평점을 기반으로 사용자 평점을 표시한다.
+  
+# 🚀 실행 및 테스트 방법
+1. 저장소 클론: git clone https://github.com/your-username/babsang-chingu-frontend.git
+2. 의존성 설치: npm install
+3. 환경 변수 설정 (.env)
+4. 프로젝트 실행: npm start
